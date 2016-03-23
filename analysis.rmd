@@ -73,5 +73,42 @@ storms$EVTYPE <- gsub("^.*surge.*$", "storm surge", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*hail.*$", "hail", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*wind.*$", "wind", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*tstm.*$", "thunderstorm", storms$EVTYPE)
+total_evtypes_after_some_fixes <- nrow(data.frame(table(storms$EVTYPE)))
+```
+
+The process above has helped narrow things a bit... down from `r total_evtypes_after_dropping_numbers` distinct hand-written EVTYPEs to `r total_evtypes_after_some_fixes`.  That's still too many.
+
+```{r}
+total_evtypes_mentioning_snow <- data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE))
+total_evtypes_mentioning_ice <- data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE))
+```
+
+There are `r total_evtypes_mentioning_snow` remaining types mentioning snow, and another `r total_evtypes_mentioning_ice` mentioning ice, and...
+
+```{r}
+data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE))
+```
+
+... some overlap between the two, this analysis chooses to prioritize ice over snow (and throw in sleet as distinct.)
+
+```{r}
+storms$EVTYPE <- gsub("^.*ice.*$", "icy conditions", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*snow.*$", "snow", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*sleet.*$", "sleet", storms$EVTYPE)
+data.frame(table(storms[grep("wint?er",storms$EVTYPE),]$EVTYPE))
+```
+
+A quick look at mentions of winter do not betray anything that seems inappropriate to lumping them together as well.
+
+```{r}
+storms$EVTYPE <- gsub("^.*winte?r.*$", "winter storm", storms$EVTYPE)
+data.frame(table(storms[grep("freez",storms$EVTYPE),]$EVTYPE))
+```
+
+Meanwhile, still on the cold weather tack, it looks like we DO need to make a distinction between a freeze (cold snap) and freezing rain.
+
+```{r}
+storms$EVTYPE <- gsub("^.*freezing.*$", "freezing rain", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*freeze.*$", "freezing temperatures", storms$EVTYPE)
 ```
 
