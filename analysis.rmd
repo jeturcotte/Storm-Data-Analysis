@@ -1,0 +1,77 @@
+---
+title: "Storm Data Analysis"
+author: "J.E. Turcotte"
+date: "March 21, 2016"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+storms <- read.csv("repdata-data-StormData.csv.bz2")
+
+# Data Preparation
+
+## Slimming Memory Consumption by R
+
+
+
+## Data Repair
+
+A brief examination of the data set provided shows that the entry method behind EVTYPE was not strongly controlled. As a result, there are myriad (if often consisting of a population of 1) rows about the same event type that are simply spelled differently, wrongly, or with difference cases.  For example, there are 5 smaples of 'small hail', one sample of 'Small Hail' and 47 samples of 'SMALL HAIL.'
+
+To that end, the following steps will attempt to clean this up a bit.  First by normalizing case and removing unnecessary punctuation or spaces:
+
+```{r}
+storms$EVTYPE <- tolower(storms$EVTYPE)
+storms$EVTYPE <- gsub("s$", "", storms$EVTYPE)
+storms$EVTYPE <- gsub("^\\s*", "", storms$EVTYPE)
+storms$EVTYPE <- gsub("[/\\]", " ", storms$EVTYPE)
+storms$EVTYPE <- gsub("[[:punct:]]", "", storms$EVTYPE)
+```
+
+Taking a quick look, a lot of the EVTYPE values entered seem to be nearly unique, and involving deeply specific values:
+
+```{r}
+data.frame(table(storms[grep("\\s*[a-z]*\\d+",storms$EVTYPE),]$EVTYPE))
+total_evtypes_before_dropping_numbers <- nrow(data.frame(table(storms$EVTYPE)))
+```
+
+As individual sets of values, they are not terribly valuable for analysis, and so this next substitution in EVTYPE should help lump these back together a little bit:
+
+```{r}
+storms$EVTYPE <- gsub("\\s*[a-z]*\\d+", "", storms$EVTYPE)
+total_evtypes_after_dropping_numbers <- nrow(data.frame(table(storms$EVTYPE)))
+```
+
+Just doing that dropped the total unique EVTYPES from `r total_evtypes_before_dropping_numbers` to `r total_evtypes_after_dropping_numbers` in total.
+
+Further, from the above subset, we see the need to collapse some descriptions into their proper categories.  The difficulty here is that some mention multiple categories, re: 'thunderstorm winds' for example.  This forces this anaylsis to make a value judgement.  Since a thunderstorm, for example, is the amalgamation of multiple types of potential damage (e.g., wind, tornado, rain, lightning, and hail), this study opts to prefer the type over any mention of the source.  So, if wind is mentioned in the EVTYPE, wind will be preferred over any other mentions, such as 'thunderstorm.'
+
+One side benefit is that longer words such as thunderstorm are often misspelled in this column, and this will eliminate a few of those. The order of the following serve as documentation as to which terms take precedence over others.
+
+```{r}
+storms$EVTYPE <- gsub("^.*blizz?ard.*$", "blizzard", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*chill.*$", "wind chill", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*tornado.*$", "tornado", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*spout.*$", "spout", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*burst.*$", "microburst", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*flood.*$", "flood", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*fog.*$", "fog", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*surge.*$", "storm surge", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*hail.*$", "hail", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*wind.*$", "wind", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*tstm.*$", "thunderstorm", storms$EVTYPE)
+```
+
