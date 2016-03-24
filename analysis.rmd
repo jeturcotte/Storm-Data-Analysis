@@ -5,23 +5,11 @@ date: "March 21, 2016"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# Data Preparation
 
 ```{r}
-summary(cars)
-```
-
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-plot(cars)
-```
-
 storms <- read.csv("repdata-data-StormData.csv.bz2")
-
-# Data Preparation
+```
 
 ## Slimming Memory Consumption by R
 
@@ -34,14 +22,16 @@ A brief examination of the data set provided shows that the entry method behind 
 To that end, the following steps will attempt to clean this up a bit.  First by normalizing case and removing unnecessary punctuation or spaces:
 
 ```{r}
+total_evtypes_before_any_fixes <- nrow(data.frame(table(storms$EVTYPE)))
 storms$EVTYPE <- tolower(storms$EVTYPE)
+total_evtypes_after_lowercase <- nrow(data.frame(table(storms$EVTYPE)))
 storms$EVTYPE <- gsub("s$", "", storms$EVTYPE)
 storms$EVTYPE <- gsub("^\\s*", "", storms$EVTYPE)
 storms$EVTYPE <- gsub("[/\\]", " ", storms$EVTYPE)
 storms$EVTYPE <- gsub("[[:punct:]]", "", storms$EVTYPE)
 ```
 
-Taking a quick look, a lot of the EVTYPE values entered seem to be nearly unique, and involving deeply specific values:
+Just setting every EVTYPE to lowercase dropped the variety from `r total_evtypes_before_any_fixes` down to `r total_evtypes_after_lowercase`.  That's not insignificant.  Taking a quick look, a lot of the EVTYPE values entered seem to be nearly unique, and involving deeply specific values:
 
 ```{r}
 data.frame(table(storms[grep("\\s*[a-z]*\\d+",storms$EVTYPE),]$EVTYPE))
@@ -57,36 +47,40 @@ total_evtypes_after_dropping_numbers <- nrow(data.frame(table(storms$EVTYPE)))
 
 Just doing that dropped the total unique EVTYPES from `r total_evtypes_before_dropping_numbers` to `r total_evtypes_after_dropping_numbers` in total.
 
-Further, from the above subset, we see the need to collapse some descriptions into their proper categories.  The difficulty here is that some mention multiple categories, re: 'thunderstorm winds' for example.  This forces this anaylsis to make a value judgement.  Since a thunderstorm, for example, is the amalgamation of multiple types of potential damage (e.g., wind, tornado, rain, lightning, and hail), this study opts to prefer the type over any mention of the source.  So, if wind is mentioned in the EVTYPE, wind will be preferred over any other mentions, such as 'thunderstorm.'
-
-One side benefit is that longer words such as thunderstorm are often misspelled in this column, and this will eliminate a few of those. The order of the following serve as documentation as to which terms take precedence over others.
+Further, from the above subset, we see the need to collapse some descriptions into their proper categories.  The difficulty here is that some mention multiple categories, re: 'thunderstorm winds' for example.  This forces this anaylsis to make a value judgement.  Since a thunderstorm, for example, is the expected amalgamation of multiple types of potential damage (e.g., wind, tornado, rain, lightning, and hail), this study prefers to recognize it as an event type, separate from special alternative mentions of said types that they typify.
 
 ```{r}
 storms$EVTYPE <- gsub("^.*blizz?ard.*$", "blizzard", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*chill.*$", "wind chill", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*tornado.*$", "tornado", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*funnel.*$", "funnel cloud", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*spout.*$", "spout", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*burst.*$", "microburst", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*lightn?ing.*$", "lightning", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*flood.*$", "flood", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*fog.*$", "fog", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*surge.*$", "storm surge", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*swell.*$", "storm surge", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*trop.*$", "tropical storm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*hail.*$", "hail", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*wind.*$", "wind", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*tstm.*$", "thunderstorm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*wall.*$", "thunderstorm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*thund.*$", "thunderstorm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*wind.*$", "wind", storms$EVTYPE)
 total_evtypes_after_some_fixes <- nrow(data.frame(table(storms$EVTYPE)))
 ```
 
 The process above has helped narrow things a bit... down from `r total_evtypes_after_dropping_numbers` distinct hand-written EVTYPEs to `r total_evtypes_after_some_fixes`.  That's still too many.
 
 ```{r}
-total_evtypes_mentioning_snow <- data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE))
-total_evtypes_mentioning_ice <- data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE))
+total_evtypes_mentioning_snow <- nrow(data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE)))
+total_evtypes_mentioning_ice <- nrow(data.frame(table(storms[grep("ice",storms$EVTYPE),]$EVTYPE)))
 ```
 
 There are `r total_evtypes_mentioning_snow` remaining types mentioning snow, and another `r total_evtypes_mentioning_ice` mentioning ice, and...
 
 ```{r}
-data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE))
+data.frame(table(storms[grep("snow|ice",storms$EVTYPE),]$EVTYPE))
 ```
 
 ... some overlap between the two, this analysis chooses to prioritize ice over snow (and throw in sleet as distinct.)
@@ -102,13 +96,56 @@ A quick look at mentions of winter do not betray anything that seems inappropria
 
 ```{r}
 storms$EVTYPE <- gsub("^.*winte?r.*$", "winter storm", storms$EVTYPE)
-data.frame(table(storms[grep("freez",storms$EVTYPE),]$EVTYPE))
+data.frame(table(storms[grep("freez|cool|cold",storms$EVTYPE),]$EVTYPE))
 ```
 
-Meanwhile, still on the cold weather tack, it looks like we DO need to make a distinction between a freeze (cold snap) and freezing rain.
+Meanwhile, still on the cold weather tack, it looks like we DO need to make a distinction between a freeze (cold snap) and freezing rain.  Then again, looking at *cool* and *cold* most reference particular cold, which is probably inferrable as *freezing* as well.
 
 ```{r}
 storms$EVTYPE <- gsub("^.*freezing.*$", "freezing rain", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*freeze.*$", "freezing temperatures", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*frost.*$", "freezing temperatures", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*cold.*$", "freezing temperatures", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*cool.*$", "unusually cool", storms$EVTYPE)
+total_evtypes_after_freezing <- nrow(data.frame(table(storms$EVTYPE)))
+data.frame(table(storms[grep("^(?!freezing ).*rain|wet",storms$EVTYPE, perl=T),]$EVTYPE))
 ```
+
+In similar vein, let us box up any mention of *warmth* or *heat*, while preserving mention of droughts or odd *dryness* (which could lead to *drought* but may not have reached those levels yet):
+
+```{r}
+storms$EVTYPE <- gsub("^.*drou.*$", "drought", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*dry.*$", "unusually dry", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*warm.*$", "unusually warm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*heat.*$", "extreme heat", storms$EVTYPE)
+```
+
+Down to `r total_evtypes_after_freezing` evtypes, when we began with `r total_evtypes_before_any_fixes`.  Given that there are still more to go, and the recent mention of freezing rain, I've just looked at any mentions of rain or general wetness, above.  Given that many of the references to 'wet' seem to infer periods of time in excess of any given storm, they will be kept separate.  Further, references to lightning may want to be separate from rain, as well.
+
+```{r}
+storms$EVTYPE <- gsub("^.*wet.*$", "prolonged damp", storms$EVTYPE)
+storms$EVTYPE <- gsub("^(?!freezing).*rain.*$", "rain", storms$EVTYPE, perl=T)
+total_evtypes_after_rain <- nrow(data.frame(table(storms$EVTYPE)))
+data.frame(table(storms$EVTYPE))
+```
+
+Now for a quick look at all `r total_evtypes_after_rain` EVTYPEs remaining.  The list is a bit long (apologies), but still significantly shorter than what we began with, and without any *noticeable* cases of miscategorization.  We'll be trying to clean up easily discernible edge cases here.  Further, *wall clouds* generally are part of a thunderstorm, we'll categorize them as such.
+
+```{r}
+storms$EVTYPE <- gsub("^.*volc.*$", "volcanic activity", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*slide.*$", "landslide", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*fire.*$", "wildfire", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*hurr.*$", "hurricane", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*typhoon.*$", "hurricane", storms$EVTYPE)
+```
+
+Note: The data itself seems to force an overlap between *hurricane* (atlantic storm) and *typhoon* (pacific storm.)  I'd have preferred to keep them separate since how the USA is set up to deal with either may be difference... but the above made that relatively improbable.  So they are put together.
+
+There seems to be some emphasis on 'urban sml stream fld' so we'll preserve that as well, separate from other flooding:
+
+```{r}
+storms$EVTYPE <- gsub("^.*stre?a?m.*$", "stream flood", storms$EVTYPE)
+```
+
+
 
