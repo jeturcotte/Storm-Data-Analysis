@@ -7,7 +7,7 @@ output: html_document
 
 # Data Preparation
 
-```{r}
+```{r loading the data}
 storms <- read.csv("repdata-data-StormData.csv.bz2")
 ```
 
@@ -21,7 +21,7 @@ A brief examination of the data set provided shows that the entry method behind 
 
 To that end, the following steps will attempt to clean this up a bit.  First by normalizing case and removing unnecessary punctuation or spaces:
 
-```{r}
+```{r removing caps pluralization and punctuation }
 total_evtypes_before_any_fixes <- nrow(data.frame(table(storms$EVTYPE)))
 storms$EVTYPE <- tolower(storms$EVTYPE)
 total_evtypes_after_lowercase <- nrow(data.frame(table(storms$EVTYPE)))
@@ -33,14 +33,14 @@ storms$EVTYPE <- gsub("[[:punct:]]", "", storms$EVTYPE)
 
 Just setting every EVTYPE to lowercase dropped the variety from `r total_evtypes_before_any_fixes` down to `r total_evtypes_after_lowercase`.  That's not insignificant.  Taking a quick look, a lot of the EVTYPE values entered seem to be nearly unique, and involving deeply specific values:
 
-```{r}
+```{r looking at numeric references}
 data.frame(table(storms[grep("\\s*[a-z]*\\d+",storms$EVTYPE),]$EVTYPE))
 total_evtypes_before_dropping_numbers <- nrow(data.frame(table(storms$EVTYPE)))
 ```
 
 As individual sets of values, they are not terribly valuable for analysis, and so this next substitution in EVTYPE should help lump these back together a little bit:
 
-```{r}
+```{r culling numeric references}
 storms$EVTYPE <- gsub("\\s*[a-z]*\\d+", "", storms$EVTYPE)
 total_evtypes_after_dropping_numbers <- nrow(data.frame(table(storms$EVTYPE)))
 ```
@@ -49,16 +49,16 @@ Just doing that dropped the total unique EVTYPES from `r total_evtypes_before_dr
 
 Further, from the above subset, we see the need to collapse some descriptions into their proper categories.  The difficulty here is that some mention multiple categories, re: 'thunderstorm winds' for example.  This forces this anaylsis to make a value judgement.  Since a thunderstorm, for example, is the expected amalgamation of multiple types of potential damage (e.g., wind, tornado, rain, lightning, and hail), this study prefers to recognize it as an event type, separate from special alternative mentions of said types that they typify.
 
-```{r}
+```{r unifying particularly obvious storm references}
 storms$EVTYPE <- gsub("^.*blizz?ard.*$", "blizzard", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*chill.*$", "wind chill", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*tornado.*$", "tornado", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*funnel.*$", "funnel cloud", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*spout.*$", "spout", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*spout.*$", "waterspout", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*burst.*$", "microburst", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*lightn?ing.*$", "lightning", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*flood.*$", "flood", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*fog.*$", "fog", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*[fv]og.*$", "fog", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*surge.*$", "storm surge", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*swell.*$", "storm surge", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*trop.*$", "tropical storm", storms$EVTYPE)
@@ -72,59 +72,70 @@ total_evtypes_after_some_fixes <- nrow(data.frame(table(storms$EVTYPE)))
 
 The process above has helped narrow things a bit... down from `r total_evtypes_after_dropping_numbers` distinct hand-written EVTYPEs to `r total_evtypes_after_some_fixes`.  That's still too many.
 
-```{r}
+```{r counting references to snow and ice}
 total_evtypes_mentioning_snow <- nrow(data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE)))
 total_evtypes_mentioning_ice <- nrow(data.frame(table(storms[grep("ice",storms$EVTYPE),]$EVTYPE)))
 ```
 
 There are `r total_evtypes_mentioning_snow` remaining types mentioning snow, and another `r total_evtypes_mentioning_ice` mentioning ice, and...
 
-```{r}
+```{r looking at references to snow and ice}
 data.frame(table(storms[grep("snow|ice",storms$EVTYPE),]$EVTYPE))
 ```
 
 ... some overlap between the two, this analysis chooses to prioritize ice over snow (and throw in sleet as distinct.)
 
-```{r}
+```{r separating snow ice and sleet}
 storms$EVTYPE <- gsub("^.*ice.*$", "icy conditions", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*glaze.*$", "icy conditions", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*snow.*$", "snow", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*sleet.*$", "sleet", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*heavy mix.*$", "sleet", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*mixed precip.*$", "sleet", storms$EVTYPE)
 data.frame(table(storms[grep("wint?er",storms$EVTYPE),]$EVTYPE))
 ```
 
-A quick look at mentions of winter do not betray anything that seems inappropriate to lumping them together as well.
+Note: the NOAA's definition of *mixed precipitation* (http://forecast.weather.gov/glossary.php?word=mixed%20precipitation) fails over to sleet when not otherwise specified, so I have done the same.
 
-```{r}
+Now, A quick look at mentions of winter do not betray anything that seems inappropriate to lumping them together as well.
+
+```{r cleaning up winter referenes}
 storms$EVTYPE <- gsub("^.*winte?r.*$", "winter storm", storms$EVTYPE)
 data.frame(table(storms[grep("freez|cool|cold",storms$EVTYPE),]$EVTYPE))
 ```
 
-Meanwhile, still on the cold weather tack, it looks like we DO need to make a distinction between a freeze (cold snap) and freezing rain.  Then again, looking at *cool* and *cold* most reference particular cold, which is probably inferrable as *freezing* as well.
+Meanwhile, still on the cold weather tack, it looks like we DO need to make a distinction between a freeze (cold snap) and freezing rain.  Then again, looking at *cool* and *cold* most reference particular cold, which is probably inferrable as *freezing* as well.  I'm also using a value judgement to toss in references to hypothermia under *freezing temperatures*.
 
-```{r}
+```{r cleaning up freezing and frost references}
 storms$EVTYPE <- gsub("^.*freezing.*$", "freezing rain", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*freeze.*$", "freezing temperatures", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*frost.*$", "freezing temperatures", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*cold.*$", "freezing temperatures", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*hypo.*$", "freezing temperatures", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*cool.*$", "unusually cool", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*low temp.*$", "unusually cool", storms$EVTYPE)
 total_evtypes_after_freezing <- nrow(data.frame(table(storms$EVTYPE)))
-data.frame(table(storms[grep("^(?!freezing ).*rain|wet",storms$EVTYPE, perl=T),]$EVTYPE))
 ```
 
 In similar vein, let us box up any mention of *warmth* or *heat*, while preserving mention of droughts or odd *dryness* (which could lead to *drought* but may not have reached those levels yet):
 
-```{r}
+```{r cleaning up hot and dry references}
 storms$EVTYPE <- gsub("^.*drou.*$", "drought", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*dry.*$", "unusually dry", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*below normal precipitation.*$", "unusually dry", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*warm.*$", "unusually warm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*heat.*$", "extreme heat", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*hyper.*$", "extreme heat", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*dust.*$", "dusty weather", storms$EVTYPE)
+data.frame(table(storms[grep("^(?!freezing ).*rain|wet",storms$EVTYPE, perl=T),]$EVTYPE))
 ```
 
-Down to `r total_evtypes_after_freezing` evtypes, when we began with `r total_evtypes_before_any_fixes`.  Given that there are still more to go, and the recent mention of freezing rain, I've just looked at any mentions of rain or general wetness, above.  Given that many of the references to 'wet' seem to infer periods of time in excess of any given storm, they will be kept separate.  Further, references to lightning may want to be separate from rain, as well.
+Down to `r total_evtypes_after_freezing` evtypes, when we began with `r total_evtypes_before_any_fixes`.  Given that there are still more to go, and the recent mention of freezing rain, I've just looked at any mentions of rain or general wetness, above.  Given that many of the references to 'wet' seem to infer periods of time in excess of any given storm, they will be kept separate.
 
-```{r}
+```{r cleaning up nonfreezing references to wet and rain}
 storms$EVTYPE <- gsub("^.*wet.*$", "prolonged damp", storms$EVTYPE)
 storms$EVTYPE <- gsub("^(?!freezing).*rain.*$", "rain", storms$EVTYPE, perl=T)
+storms$EVTYPE <- gsub("^.*precip.*$", "rain", storms$EVTYPE, perl=T)
 total_evtypes_after_rain <- nrow(data.frame(table(storms$EVTYPE)))
 data.frame(table(storms$EVTYPE))
 ```
@@ -147,5 +158,37 @@ There seems to be some emphasis on 'urban sml stream fld' so we'll preserve that
 storms$EVTYPE <- gsub("^.*stre?a?m.*$", "stream flood", storms$EVTYPE)
 ```
 
+Let's also engage with references to nonflood water conditions:
 
+```{r}
+storms$EVTYPE <- gsub("^rough.*$", "rough water", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*seiche.*$", "rough water", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*high tide.*$", "high tide", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*blowout tide.*$", "high tide", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*low tide.*$", "low tide", storms$EVTYPE)
+```
 
+Now this anaylsis needs to explore any mention of extremities.  Because the terminology used is relative in nature (e.g., a record low of 40F in the middle of August does not constitute *freeze temperatures*) I'll have to categorize under *unsually cool*, instead.  Vice versa, as well.
+
+```{r}
+storms$EVTYPE <- gsub("^.*high temp.*$", "unusually warm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*record high.*$", "unusually warm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*low temp.*$", "unusually cool", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*record low.*$", "unusually cool", storms$EVTYPE)
+data.frame(table(storms[grep("record",storms$EVTYPE),]$EVTYPE))
+```
+
+But, notice that we now have a not unappreciate number of records referring to record temperatures.  Let's see what consequences we have from each:
+
+```{r}
+total_fatalities_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
+total_crop_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
+total_property_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
+
+```
+`
+The results being, `r total_fatalities_from_record_temperatures` total maximum fatalities, `r total_crop_damage_from_record_temperatures` incident maximum crop damage, and `r total_property_damage_from_record_temperatures` in property damage.  A cursory examinination of the columns of data available, there appears to be no reliable algorithmic way to discern whether these were highs or lows, and given the above maximum, I have to elect to render these records mute to this study.
+
+```{r}
+storms$EVTYPE <- gsub("^.*record.*$", "to be ignored", storms$EVTYPE)
+```
