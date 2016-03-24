@@ -58,6 +58,8 @@ storms$EVTYPE <- gsub("^.*spout.*$", "waterspout", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*burst.*$", "microburst", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*lightn?ing.*$", "lightning", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*flood.*$", "flood", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*high water.*$", "flood", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*rising water.*$", "flood", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*[fv]og.*$", "fog", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*surge.*$", "storm surge", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*swell.*$", "storm surge", storms$EVTYPE)
@@ -66,7 +68,7 @@ storms$EVTYPE <- gsub("^.*hail.*$", "hail", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*tstm.*$", "thunderstorm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*wall.*$", "thunderstorm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*thund.*$", "thunderstorm", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*wind.*$", "wind", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*wi?nd.*$", "wind", storms$EVTYPE)
 total_evtypes_after_some_fixes <- nrow(data.frame(table(storms$EVTYPE)))
 ```
 
@@ -145,6 +147,7 @@ Now for a quick look at all `r total_evtypes_after_rain` EVTYPEs remaining.  The
 ```{r}
 storms$EVTYPE <- gsub("^.*volc.*$", "volcanic activity", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*slide.*$", "landslide", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*slump.*$", "landslide", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*fire.*$", "wildfire", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*hurr.*$", "hurricane", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*typhoon.*$", "hurricane", storms$EVTYPE)
@@ -163,6 +166,7 @@ Let's also engage with references to nonflood water conditions:
 ```{r}
 storms$EVTYPE <- gsub("^rough.*$", "rough water", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*seiche.*$", "rough water", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*surf.*$", "rough water", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*high tide.*$", "high tide", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*blowout tide.*$", "high tide", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*low tide.*$", "low tide", storms$EVTYPE)
@@ -173,6 +177,7 @@ Now this anaylsis needs to explore any mention of extremities.  Because the term
 ```{r}
 storms$EVTYPE <- gsub("^.*high temp.*$", "unusually warm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*record high.*$", "unusually warm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*hot.*$", "unusually warm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*low temp.*$", "unusually cool", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*record low.*$", "unusually cool", storms$EVTYPE)
 data.frame(table(storms[grep("record",storms$EVTYPE),]$EVTYPE))
