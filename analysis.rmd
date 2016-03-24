@@ -69,6 +69,7 @@ storms$EVTYPE <- gsub("^.*tstm.*$", "thunderstorm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*wall.*$", "thunderstorm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*thund.*$", "thunderstorm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*wi?nd.*$", "wind", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*gustnado.*$", "wind", storms$EVTYPE)
 total_evtypes_after_easy_fixes <- nrow(data.frame(table(storms$EVTYPE)))
 ```
 
@@ -89,6 +90,7 @@ data.frame(table(storms[grep("snow|ice",storms$EVTYPE),]$EVTYPE))
 
 ```{r separating snow ice and sleet}
 storms$EVTYPE <- gsub("^.*ice.*$", "icy conditions", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*icy.*$", "icy conditions", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*glaze.*$", "icy conditions", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*snow.*$", "snow", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*sleet.*$", "sleet", storms$EVTYPE)
@@ -137,7 +139,8 @@ Down to `r total_evtypes_after_freezing` evtypes, when we began with `r total_ev
 ```{r cleaning up nonfreezing references to wet and rain}
 storms$EVTYPE <- gsub("^.*wet.*$", "prolonged damp", storms$EVTYPE)
 storms$EVTYPE <- gsub("^(?!freezing).*rain.*$", "rain", storms$EVTYPE, perl=T)
-storms$EVTYPE <- gsub("^.*precip.*$", "rain", storms$EVTYPE, perl=T)
+storms$EVTYPE <- gsub("^.*precip.*$", "rain", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*shower.*$", "rain", storms$EVTYPE)
 total_evtypes_after_rain <- nrow(data.frame(table(storms$EVTYPE)))
 data.frame(table(storms$EVTYPE))
 ```
@@ -200,4 +203,5 @@ The results being, `r total_fatalities_from_record_temperatures` total maximum f
 
 ```{r}
 storms$EVTYPE <- gsub("^.*record.*$", "to be ignored", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*other.*$", "to be ignored", storms$EVTYPE)
 ```
