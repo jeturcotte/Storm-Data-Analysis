@@ -69,10 +69,10 @@ storms$EVTYPE <- gsub("^.*tstm.*$", "thunderstorm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*wall.*$", "thunderstorm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*thund.*$", "thunderstorm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*wi?nd.*$", "wind", storms$EVTYPE)
-total_evtypes_after_some_fixes <- nrow(data.frame(table(storms$EVTYPE)))
+total_evtypes_after_easy_fixes <- nrow(data.frame(table(storms$EVTYPE)))
 ```
 
-The process above has helped narrow things a bit... down from `r total_evtypes_after_dropping_numbers` distinct hand-written EVTYPEs to `r total_evtypes_after_some_fixes`.  That's still too many.
+The process above has helped narrow things a bit... down from `r total_evtypes_after_dropping_numbers` distinct hand-written EVTYPEs to `r total_evtypes_after_easy_fixes`.  That's still too many.
 
 ```{r counting references to snow and ice}
 total_evtypes_mentioning_snow <- nrow(data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE)))
@@ -148,6 +148,7 @@ Now for a quick look at all `r total_evtypes_after_rain` EVTYPEs remaining.  The
 storms$EVTYPE <- gsub("^.*volc.*$", "volcanic activity", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*slide.*$", "landslide", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*slump.*$", "landslide", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*avalan.*$", "avalanche", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*fire.*$", "wildfire", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*hurr.*$", "hurricane", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*typhoon.*$", "hurricane", storms$EVTYPE)
@@ -155,10 +156,11 @@ storms$EVTYPE <- gsub("^.*typhoon.*$", "hurricane", storms$EVTYPE)
 
 Note: The data itself seems to force an overlap between *hurricane* (atlantic storm) and *typhoon* (pacific storm.)  I'd have preferred to keep them separate since how the USA is set up to deal with either may be difference... but the above made that relatively improbable.  So they are put together.
 
-There seems to be some emphasis on 'urban sml stream fld' so we'll preserve that as well, separate from other flooding:
+There seems to be some emphasis on 'urban sml stream fld' so we'll preserve that as well, separate from other flooding.  Futher, since so many had referenced urban, and some that DO reference urban do NOT reference floods, per se, we'll choose to believe they meant to:
 
 ```{r}
-storms$EVTYPE <- gsub("^.*stre?a?m.*$", "stream flood", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*stre?a?m.*$", "localized flood", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*urban.*$", "localized flood", storms$EVTYPE)
 ```
 
 Let's also engage with references to nonflood water conditions:
@@ -167,6 +169,8 @@ Let's also engage with references to nonflood water conditions:
 storms$EVTYPE <- gsub("^rough.*$", "rough water", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*seiche.*$", "rough water", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*surf.*$", "rough water", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*high sea.*$", "rough water", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*high wave.*$", "rough water", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*high tide.*$", "high tide", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*blowout tide.*$", "high tide", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*low tide.*$", "low tide", storms$EVTYPE)
@@ -191,7 +195,7 @@ total_crop_damage_from_record_temperatures <- max(storms[grep("record",storms$EV
 total_property_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
 
 ```
-`
+
 The results being, `r total_fatalities_from_record_temperatures` total maximum fatalities, `r total_crop_damage_from_record_temperatures` incident maximum crop damage, and `r total_property_damage_from_record_temperatures` in property damage.  A cursory examinination of the columns of data available, there appears to be no reliable algorithmic way to discern whether these were highs or lows, and given the above maximum, I have to elect to render these records mute to this study.
 
 ```{r}
