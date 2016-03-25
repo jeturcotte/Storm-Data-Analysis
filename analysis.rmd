@@ -31,6 +31,14 @@ storms$EVTYPE <- gsub("[/\\]", " ", storms$EVTYPE)
 storms$EVTYPE <- gsub("[[:punct:]]", "", storms$EVTYPE)
 ```
 
+Having looked over the EVTYPES repeatedly while doing this, I did notice a section of items that seemed to be getting special attention without being particularly explicit as to what they were.  I don't want to abandoned them just yet, so I'm isolating them below, as previous attempts to grep through the REMARKS field proved deleteriously long.
+
+```{r}
+summaries <- storms[grep(["summary"], storms$EVTYPE),])
+```
+
+As you can see, we have dated summaries... but of what?
+
 Just setting every EVTYPE to lowercase dropped the variety from `r total_evtypes_before_any_fixes` down to `r total_evtypes_after_lowercase`.  That's not insignificant.  Taking a quick look, a lot of the EVTYPE values entered seem to be nearly unique, and involving deeply specific values:
 
 ```{r looking at numeric references}
@@ -143,6 +151,12 @@ storms$EVTYPE <- gsub("^.*precip.*$", "rain", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*shower.*$", "rain", storms$EVTYPE)
 total_evtypes_after_rain <- nrow(data.frame(table(storms$EVTYPE)))
 data.frame(table(storms$EVTYPE))
+```
+
+We seem to have a lot of items listed as *summary*.  This isn't particularly useful as an EVTYPE, but they did seem to get special care, so let's take a quick look at what's going on inside their REMARKS.
+
+```{r checking out summary items}
+summaries <- storms[grep("summary",storms$EVTYPE),]
 ```
 
 Now for a quick look at all `r total_evtypes_after_rain` EVTYPEs remaining.  The list is a bit long (apologies), but still significantly shorter than what we began with, and without any *noticeable* cases of miscategorization.  We'll be trying to clean up easily discernible edge cases here.  Further, *wall clouds* generally are part of a thunderstorm, we'll categorize them as such.
