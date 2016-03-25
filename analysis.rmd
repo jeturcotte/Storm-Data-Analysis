@@ -82,6 +82,8 @@ storms$EVTYPE <- gsub("^.*spout.*$", "waterspout", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*burst.*$", "microburst", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*lightn?ing.*$", "lightning", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*flood.*$", "flood", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*break.*$", "flood", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*dam failure.*$", "flood", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*high water.*$", "flood", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*rising water.*$", "flood", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*[fv]og.*$", "fog", storms$EVTYPE)
@@ -129,6 +131,7 @@ Now, A quick look at mentions of winter do not betray anything that seems inappr
 
 ```{r cleaning up winter referenes}
 storms$EVTYPE <- gsub("^.*winte?r.*$", "winter storm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*mix.*$", "winter storm", storms$EVTYPE)
 data.frame(table(storms[grep("freez|cool|cold",storms$EVTYPE),]$EVTYPE))
 ```
 
@@ -171,8 +174,9 @@ data.frame(table(storms$EVTYPE))
 
 Now for a quick look at all `r total_evtypes_after_rain` EVTYPEs remaining.  The list is a bit long (apologies), but still significantly shorter than what we began with, and without any *noticeable* cases of miscategorization.  We'll be trying to clean up easily discernible edge cases here.  Further, *wall clouds* generally are part of a thunderstorm, we'll categorize them as such.
 
-```{r}
+```{r coalescing some rarer events}
 storms$EVTYPE <- gsub("^.*volc.*$", "volcanic activity", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*smoke.*$", "smoke", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*slide.*$", "landslide", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*slump.*$", "landslide", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*avalan.*$", "avalanche", storms$EVTYPE)
@@ -185,14 +189,14 @@ Note: The data itself seems to force an overlap between *hurricane* (atlantic st
 
 There seems to be some emphasis on 'urban sml stream fld' so we'll preserve that as well, separate from other flooding.  Futher, since so many had referenced urban, and some that DO reference urban do NOT reference floods, per se, we'll choose to believe they meant to:
 
-```{r}
+```{r localized flooding}
 storms$EVTYPE <- gsub("^.*stre?a?m.*$", "localized flood", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*urban.*$", "localized flood", storms$EVTYPE)
 ```
 
 Let's also engage with references to nonflood water conditions:
 
-```{r}
+```{r rough waters}
 storms$EVTYPE <- gsub("^rough.*$", "rough water", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*seiche.*$", "rough water", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*surf.*$", "rough water", storms$EVTYPE)
@@ -205,7 +209,7 @@ storms$EVTYPE <- gsub("^.*low tide.*$", "low tide", storms$EVTYPE)
 
 Now this anaylsis needs to explore any mention of extremities.  Because the terminology used is relative in nature (e.g., a record low of 40F in the middle of August does not constitute *freeze temperatures*) I'll have to categorize under *unsually cool*, instead.  Vice versa, as well.
 
-```{r}
+```{r record temperatures}
 storms$EVTYPE <- gsub("^.*high temp.*$", "unusually warm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*record high.*$", "unusually warm", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*hot.*$", "unusually warm", storms$EVTYPE)
@@ -216,7 +220,7 @@ data.frame(table(storms[grep("record",storms$EVTYPE),]$EVTYPE))
 
 But, notice that we now have a not unappreciate number of records referring to record temperatures.  Let's see what consequences we have from each:
 
-```{r}
+```{r counting up damages from records that remain}
 total_fatalities_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
 total_crop_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
 total_property_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
@@ -224,7 +228,17 @@ total_property_damage_from_record_temperatures <- max(storms[grep("record",storm
 
 The results being, `r total_fatalities_from_record_temperatures` total maximum fatalities, `r total_crop_damage_from_record_temperatures` incident maximum crop damage, and `r total_property_damage_from_record_temperatures` in property damage.  A cursory examinination of the columns of data available, there appears to be no reliable algorithmic way to discern whether these were highs or lows, and given the above maximum, I have to elect to render these records mute to this study.
 
-```{r}
+```{r opting to eliminate these as ignorable}
 storms$EVTYPE <- gsub("^.*record.*$", "to be ignored", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*other.*$", "to be ignored", storms$EVTYPE)
 ```
+
+Finally, this leaves just a handful of outlier EVTYPEs that either can't significantly alter this study or are not quickly identifiable as any other particular type.  The choice made at this juncture is to isolate any that have a count of less than 10 instances, and stale them for elimination:
+
+```{r ignore tiny EVTYPE result sets}
+evtype_names <- data.frame(table(storms$EVTYPE))
+storms[storms$EVTYPE %in% evtype_names[evtype_names$Freq < 10,]$Var1,]$EVTYPE <- 'to be ignored'
+storms$EVTYPE <- as.factor(storms$EVTYPE)
+```
+
+And that leaves us with `r nrow(data.frame(table(storms$EVTYPE)))` distinct event types to consider for the rest of our analysis.

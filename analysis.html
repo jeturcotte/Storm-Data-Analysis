@@ -133,170 +133,217 @@ storms$EVTYPE &lt;- gsub(&quot;s$&quot;, &quot;&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^\\s*&quot;, &quot;&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;[/\\]&quot;, &quot; &quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;[[:punct:]]&quot;, &quot;&quot;, storms$EVTYPE)</code></pre>
-<p>Just setting every EVTYPE to lowercase dropped the variety from 985 down to 898. That’s not insignificant. Taking a quick look, a lot of the EVTYPE values entered seem to be nearly unique, and involving deeply specific values:</p>
+<p>Just setting every EVTYPE to lowercase dropped the variety from 985 down to 898. That’s not insignificant.</p>
+<p>Having looked over these EVTYPES repeatedly while doing this, I did notice a section of items that seemed to be getting special attention without being particularly explicit as to what they were. I don’t want to abandoned them just yet, so I’m isolating them below, as previous attempts to grep through the REMARKS field proved deleteriously long.</p>
+<pre class="r"><code>summaries &lt;- storms[grep(&quot;summary&quot;, storms$EVTYPE),]
+summaries$REMARKS &lt;- as.character(summaries$REMARKS)
+summary(summaries)</code></pre>
+<pre><code>##     STATE__                    BGN_DATE         BGN_TIME    TIME_ZONE 
+##  Min.   :38.00   11/16/1996 0:00:00: 2   12:25:00 PM: 4   CST    :76  
+##  1st Qu.:40.00   3/23/1996 0:00:00 : 2   03:55:00 PM: 3   ADT    : 0  
+##  Median :40.00   4/12/1996 0:00:00 : 2   04:45:00 PM: 3   AKS    : 0  
+##  Mean   :41.66   4/21/1996 0:00:00 : 2   09:55:00 PM: 3   AST    : 0  
+##  3rd Qu.:40.00   5/22/1996 0:00:00 : 2   01:15:00 PM: 2   CDT    : 0  
+##  Max.   :48.00   5/26/1996 0:00:00 : 2   04:15:00 PM: 2   CSC    : 0  
+##                  (Other)           :64   (Other)    :59   (Other): 0  
+##      COUNTY     
+##  Min.   : 1.00  
+##  1st Qu.: 7.00  
+##  Median :16.00  
+##  Mean   :30.00  
+##  3rd Qu.:42.25  
+##  Max.   :89.00  
+##                 
+##                                                                                       COUNTYNAME
+##  TXZ085&gt;086                                                                                : 2  
+##  NDZ001&gt;005 - 009&gt;013 - 017&gt;023 - 031&gt;037 - 040&gt;048 - 050&gt;051                              : 1  
+##  OKZ004 - 006&gt;007 - 009&gt;010                                                                : 1  
+##  OKZ004 - 007 - 010 - 012 - 015 - 021                                                      : 1  
+##  OKZ004 - 007&gt;008 - 010&gt;013                                                                : 1  
+##  OKZ004 - 008 - 010 - 012 - 015 - 017 - 019 - 022&gt;029 - 031 - 033&gt;035 - 039&gt;040 - 042 - 044: 1  
+##  (Other)                                                                                   :69  
+##      STATE       EVTYPE            BGN_RANGE    BGN_AZI  
+##  OK     :59   Length:76          Min.   :0          :76  
+##  TX     :16   Class :character   1st Qu.:0     N    : 0  
+##  ND     : 1   Mode  :character   Median :0    NW    : 0  
+##  AK     : 0                      Mean   :0   E      : 0  
+##  AL     : 0                      3rd Qu.:0   Eas    : 0  
+##  AM     : 0                      Max.   :0   EE     : 0  
+##  (Other): 0                                  (Other): 0  
+##            BGN_LOCATI               END_DATE         END_TIME 
+##                 :75   5/22/1996 0:00:00 : 3   04:45:00 PM: 3  
+##  CN             : 1   6/6/1996 0:00:00  : 3   05:30:00 PM: 3  
+##   Christiansburg: 0   11/16/1996 0:00:00: 2   08:00:00 PM: 3  
+##   EYW           : 0   3/23/1996 0:00:00 : 2   11:00:00 PM: 3  
+##   Garden        : 0   4/12/1996 0:00:00 : 2   05:00:00 PM: 2  
+##   Naples        : 0   5/10/1996 0:00:00 : 2   06:00:00 AM: 2  
+##  (Other)        : 0   (Other)           :62   (Other)    :60  
+##    COUNTY_END COUNTYENDN       END_RANGE    END_AZI          END_LOCATI
+##  Min.   :0    Mode:logical   Min.   :0          :76               :75  
+##  1st Qu.:0    NA's:76        1st Qu.:0   E      : 0   CN          : 1  
+##  Median :0                   Median :0   ENE    : 0    CANTON     : 0  
+##  Mean   :0                   Mean   :0   ESE    : 0    TULIA      : 0  
+##  3rd Qu.:0                   3rd Qu.:0   EST    : 0   - .5 NNW    : 0  
+##  Max.   :0                   Max.   :0   Isl    : 0   - 11 ESE Jay: 0  
+##                                          (Other): 0   (Other)     : 0  
+##      LENGTH      WIDTH         F            MAG      FATALITIES
+##  Min.   :0   Min.   :0   Min.   : NA   Min.   :0   Min.   :0   
+##  1st Qu.:0   1st Qu.:0   1st Qu.: NA   1st Qu.:0   1st Qu.:0   
+##  Median :0   Median :0   Median : NA   Median :0   Median :0   
+##  Mean   :0   Mean   :0   Mean   :NaN   Mean   :0   Mean   :0   
+##  3rd Qu.:0   3rd Qu.:0   3rd Qu.: NA   3rd Qu.:0   3rd Qu.:0   
+##  Max.   :0   Max.   :0   Max.   : NA   Max.   :0   Max.   :0   
+##                          NA's   :76                            
+##     INJURIES    PROPDMG    PROPDMGEXP    CROPDMG    CROPDMGEXP
+##  Min.   :0   Min.   :0          :76   Min.   :0          :76  
+##  1st Qu.:0   1st Qu.:0   -      : 0   1st Qu.:0   ?      : 0  
+##  Median :0   Median :0   ?      : 0   Median :0   0      : 0  
+##  Mean   :0   Mean   :0   +      : 0   Mean   :0   2      : 0  
+##  3rd Qu.:0   3rd Qu.:0   0      : 0   3rd Qu.:0   B      : 0  
+##  Max.   :0   Max.   :0   1      : 0   Max.   :0   k      : 0  
+##                          (Other): 0               (Other): 0  
+##       WFO                                        STATEOFFIC
+##  OUN    :75   OKLAHOMA, Western, Central and Southeast:59  
+##  BIS    : 1   TEXAS, Western North                    :16  
+##         : 0   NORTH DAKOTA, Central and West          : 1  
+##   CI    : 0                                           : 0  
+##  %SD    : 0   ALABAMA, Central                        : 0  
+##  $AC    : 0   ALABAMA, North                          : 0  
+##  (Other): 0   (Other)                                 : 0  
+##                                                                                                                                                                         ZONENAMES 
+##  WILBARGER - WILBARGER - WICHITA                                                                                                                                             : 2  
+##  ALFALFA - ALFALFA - GRANT - KAY - MAJOR - GARFIELD - NOBLE - LOGAN - PAYNE - OKLAHOMA - LINCOLN - GRADY - MCCLAIN - CLEVELAND - POTTAWATOMIE - SEMINOLE - JEFFERSON - CARTER: 1  
+##  ALFALFA - ALFALFA - GRANT - KAY - MAJOR - NOBLE - HARMON - TILLMAN - COMANCHE                                                                                               : 1  
+##  ALFALFA - ALFALFA - GRANT - ROGER MILLS - BLAINE - KINGFISHER - OKLAHOMA - LINCOLN                                                                                          : 1  
+##  ARCHER - ARCHER - CLAY                                                                                                                                                      : 1  
+##  BLAINE - BLAINE - CADDO - CANADIAN - GREER - COMANCHE                                                                                                                       : 1  
+##  (Other)                                                                                                                                                                     :69  
+##     LATITUDE   LONGITUDE   LATITUDE_E   LONGITUDE_   REMARKS         
+##  Min.   :0   Min.   :0   Min.   :0    Min.   :0    Length:76         
+##  1st Qu.:0   1st Qu.:0   1st Qu.:0    1st Qu.:0    Class :character  
+##  Median :0   Median :0   Median :0    Median :0    Mode  :character  
+##  Mean   :0   Mean   :0   Mean   :0    Mean   :0                      
+##  3rd Qu.:0   3rd Qu.:0   3rd Qu.:0    3rd Qu.:0                      
+##  Max.   :0   Max.   :0   Max.   :0    Max.   :0                      
+##                                                                      
+##      REFNUM      
+##  Min.   :269437  
+##  1st Qu.:270476  
+##  Median :270934  
+##  Mean   :273367  
+##  3rd Qu.:275079  
+##  Max.   :299496  
+## </code></pre>
+<p>There appear to be, out of 76 records, 72 that mention thunderstorms. So let’s look at those that don’t:</p>
+<pre class="r"><code>summaries[!grepl(&quot;thunder&quot;,tolower(summaries$REMARKS)),]$REMARKS</code></pre>
+<pre><code>## [1] &quot;Repeated heavy rainfall over portions of central Oklahoma resulted in flash flooding in the Oklahoma City metro area and in Seminole County.  See following individual Storm Data entries for further details and additional reports. &quot;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+## [2] &quot;The economic impact these 4 blizzards had on North Dakota were staggering. On the agricultural side alone, it is estimated that over 6 million was lost for buildings and machinery, 4.7 million in livestock deaths, 21.7 million for extra feed consumption, and $50,000 worth of dumped milk when transporters couldn't get to the farms. In addition, its estimated that $600,000 was spent by the Game and Fish Dept. to help farmers battle the deer that was eating their hay reserves. Also, its estimated thta the National Guard spent $800,000 in January to help with snow removal. Many communities spent up to 10 times their snow removal budget just in January alone, with the state itself spending an estimated additional $125,000 in salaries and operating expenses. Damage totals are still coming in as of this writing. The January of 1997 will be long remembered in the minds of many North Dakotans.\n&quot;</code></pre>
+<p>So we have entries referring to a flood and to a blizzard. All the rest mention thunderstorms. Many, however, including the flood-only reference ALSO reference ‘later entries.’ In other words, other rows. Counting both brings the danger of double-counting data. So, let’s set aside the blizzard, mark any others that do NOT mention ‘additional reports’ as thunderstorms, and the rest as to be ignored.</p>
+<pre class="r"><code>storms[storms$REFNUM==summaries[grepl(&quot;blizzard&quot;,tolower(summaries$REMARKS)),]$REFNUM,]$EVTYPE &lt;- 'blizzard'
+storms[storms$REFNUM %in% summaries[!grepl(&quot;additional&quot;,tolower(summaries$REMARKS)),]$REFNUM,]$EVTYPE &lt;- 'thunderstorm'
+storms$EVTYPE &lt;- gsub(&quot;^.*summary.*$&quot;, &quot;to be ignored&quot;, storms$EVTYPE)</code></pre>
+<p>Given that we’d seen a lot of numbers in the names of these EVTYPES, let’s look at any that may be left:</p>
 <pre class="r"><code>data.frame(table(storms[grep(&quot;\\s*[a-z]*\\d+&quot;,storms$EVTYPE),]$EVTYPE))</code></pre>
-<pre><code>##                          Var1 Freq
-## 1           dry microburst 50    1
-## 2           dry microburst 53    1
-## 3           dry microburst 58    2
-## 4           dry microburst 61    1
-## 5           dry microburst 84    1
-## 6                    hail 075   19
-## 7                    hail 088    2
-## 8                    hail 100   19
-## 9                    hail 125    1
-## 10                   hail 150    2
-## 11                   hail 175   18
-## 12                   hail 200    1
-## 13                   hail 225    1
-## 14                   hail 275    3
-## 15                   hail 450    1
-## 16                    hail 75   29
-## 17                    hail 80    2
-## 18                    hail 88    1
-## 19                    hail075    1
-## 20               high wind 48    1
-## 21               high wind 63    1
-## 22               high wind 70    1
-## 23              high wind g40    2
-## 24              high winds 55    1
-## 25              high winds 57    1
-## 26              high winds 58    1
-## 27              high winds 63    2
-## 28              high winds 66    2
-## 29              high winds 67    1
-## 30              high winds 73    1
-## 31              high winds 76    1
-## 32              high winds 80    2
-## 33              high winds 82    1
-## 34         metro storm may 26    1
-## 35          summary august 10    2
-## 36          summary august 11    2
-## 37          summary august 17    1
-## 38          summary august 21    1
-## 39          summary august 23    1
-## 40          summary august 28    1
-## 41           summary august 4    1
-## 42           summary august 7    1
-## 43           summary august 9    1
-## 44             summary jan 17    1
-## 45          summary july 2324    1
-## 46          summary june 1819    1
-## 47            summary june 56    1
-## 48             summary june 6    1
-## 49             summary nov 16    2
-## 50             summary nov 67    1
-## 51           summary oct 2021    1
-## 52         summary october 31    1
-## 53        summary of april 12    2
-## 54        summary of april 13    1
-## 55        summary of april 21    2
-## 56        summary of april 27    1
-## 57       summary of april 3rd    1
-## 58        summary of august 1    1
-## 59         summary of july 11    1
-## 60          summary of july 2    1
-## 61         summary of july 22    1
-## 62         summary of july 26    1
-## 63         summary of july 29    1
-## 64          summary of july 3    1
-## 65         summary of june 10    1
-## 66         summary of june 11    1
-## 67         summary of june 12    1
-## 68         summary of june 13    2
-## 69         summary of june 15    1
-## 70         summary of june 16    1
-## 71         summary of june 18    1
-## 72         summary of june 23    1
-## 73         summary of june 24    1
-## 74          summary of june 3    2
-## 75         summary of june 30    1
-## 76          summary of june 4    1
-## 77          summary of june 6    1
-## 78        summary of march 14    1
-## 79        summary of march 23    2
-## 80        summary of march 24    1
-## 81      summary of march 2425    1
-## 82        summary of march 27    1
-## 83        summary of march 29    1
-## 84          summary of may 10    1
-## 85          summary of may 13    1
-## 86          summary of may 14    1
-## 87          summary of may 22    1
-## 88       summary of may 22 am    1
-## 89       summary of may 22 pm    1
-## 90       summary of may 26 am    1
-## 91       summary of may 26 pm    1
-## 92       summary of may 31 am    1
-## 93       summary of may 31 pm    1
-## 94         summary of may 910    1
-## 95            summary sept 18    1
-## 96          summary sept 2526    1
-## 97       summary september 20    1
-## 98       summary september 23    2
-## 99        summary september 3    1
-## 100       summary september 4    1
-## 101      thunderstorm wind 50    2
-## 102      thunderstorm wind 52    1
-## 103      thunderstorm wind 56    1
-## 104      thunderstorm wind 59    1
-## 105  thunderstorm wind 59 mph    2
-## 106  thunderstorm wind 60 mph    4
-## 107  thunderstorm wind 65 mph    1
-## 108   thunderstorm wind 65mph    1
-## 109      thunderstorm wind 69    1
-## 110  thunderstorm wind 98 mph    1
-## 111     thunderstorm wind g40    1
-## 112     thunderstorm wind g50    4
-## 113     thunderstorm wind g51    1
-## 114     thunderstorm wind g52    2
-## 115     thunderstorm wind g55    1
-## 116     thunderstorm wind g60    2
-## 117     thunderstorm wind g61    1
-## 118     thunderstorm winds 13    1
-## 119      thunderstorm winds 2    1
-## 120     thunderstorm winds 50    1
-## 121     thunderstorm winds 52    1
-## 122     thunderstorm winds 53    1
-## 123     thunderstorm winds 60    1
-## 124     thunderstorm winds 61    1
-## 125     thunderstorm winds 62    1
-## 126 thunderstorm winds 63 mph    1
-## 127    thunderstorm winds g60    1
-## 128      thunderstorm winds53    1
-## 129          thunderstormw 50    1
-## 130                tornado f0   19
-## 131                tornado f1    4
-## 132                tornado f2    3
-## 133                tornado f3    2
-## 134            tstm wind  g45    1
-## 135              tstm wind 40    1
-## 136              tstm wind 41    1
-## 137              tstm wind 45    1
-## 138              tstm wind 50    1
-## 139              tstm wind 51    2
-## 140              tstm wind 52    5
-## 141              tstm wind 55    3
-## 142              tstm wind 65    1
-## 143             tstm wind g35    1
-## 144             tstm wind g40   10
-## 145             tstm wind g45   41
-## 146             tstm wind g58    1</code></pre>
+<pre><code>##                         Var1 Freq
+## 1          dry microburst 50    1
+## 2          dry microburst 53    1
+## 3          dry microburst 58    2
+## 4          dry microburst 61    1
+## 5          dry microburst 84    1
+## 6                   hail 075   19
+## 7                   hail 088    2
+## 8                   hail 100   19
+## 9                   hail 125    1
+## 10                  hail 150    2
+## 11                  hail 175   18
+## 12                  hail 200    1
+## 13                  hail 225    1
+## 14                  hail 275    3
+## 15                  hail 450    1
+## 16                   hail 75   29
+## 17                   hail 80    2
+## 18                   hail 88    1
+## 19                   hail075    1
+## 20              high wind 48    1
+## 21              high wind 63    1
+## 22              high wind 70    1
+## 23             high wind g40    2
+## 24             high winds 55    1
+## 25             high winds 57    1
+## 26             high winds 58    1
+## 27             high winds 63    2
+## 28             high winds 66    2
+## 29             high winds 67    1
+## 30             high winds 73    1
+## 31             high winds 76    1
+## 32             high winds 80    2
+## 33             high winds 82    1
+## 34        metro storm may 26    1
+## 35      thunderstorm wind 50    2
+## 36      thunderstorm wind 52    1
+## 37      thunderstorm wind 56    1
+## 38      thunderstorm wind 59    1
+## 39  thunderstorm wind 59 mph    2
+## 40  thunderstorm wind 60 mph    4
+## 41  thunderstorm wind 65 mph    1
+## 42   thunderstorm wind 65mph    1
+## 43      thunderstorm wind 69    1
+## 44  thunderstorm wind 98 mph    1
+## 45     thunderstorm wind g40    1
+## 46     thunderstorm wind g50    4
+## 47     thunderstorm wind g51    1
+## 48     thunderstorm wind g52    2
+## 49     thunderstorm wind g55    1
+## 50     thunderstorm wind g60    2
+## 51     thunderstorm wind g61    1
+## 52     thunderstorm winds 13    1
+## 53      thunderstorm winds 2    1
+## 54     thunderstorm winds 50    1
+## 55     thunderstorm winds 52    1
+## 56     thunderstorm winds 53    1
+## 57     thunderstorm winds 60    1
+## 58     thunderstorm winds 61    1
+## 59     thunderstorm winds 62    1
+## 60 thunderstorm winds 63 mph    1
+## 61    thunderstorm winds g60    1
+## 62      thunderstorm winds53    1
+## 63          thunderstormw 50    1
+## 64                tornado f0   19
+## 65                tornado f1    4
+## 66                tornado f2    3
+## 67                tornado f3    2
+## 68            tstm wind  g45    1
+## 69              tstm wind 40    1
+## 70              tstm wind 41    1
+## 71              tstm wind 45    1
+## 72              tstm wind 50    1
+## 73              tstm wind 51    2
+## 74              tstm wind 52    5
+## 75              tstm wind 55    3
+## 76              tstm wind 65    1
+## 77             tstm wind g35    1
+## 78             tstm wind g40   10
+## 79             tstm wind g45   41
+## 80             tstm wind g58    1</code></pre>
 <pre class="r"><code>total_evtypes_before_dropping_numbers &lt;- nrow(data.frame(table(storms$EVTYPE)))</code></pre>
 <p>As individual sets of values, they are not terribly valuable for analysis, and so this next substitution in EVTYPE should help lump these back together a little bit:</p>
 <pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;\\s*[a-z]*\\d+&quot;, &quot;&quot;, storms$EVTYPE)
 total_evtypes_after_dropping_numbers &lt;- nrow(data.frame(table(storms$EVTYPE)))</code></pre>
-<p>Just doing that dropped the total unique EVTYPES from 815 to 692 in total.</p>
+<p>Just doing that dropped the total unique EVTYPES from 749 to 674 in total.</p>
 <p>Further, from the above subset, we see the need to collapse some descriptions into their proper categories. The difficulty here is that some mention multiple categories, re: ‘thunderstorm winds’ for example. This forces this anaylsis to make a value judgement. Since a thunderstorm, for example, is the expected amalgamation of multiple types of potential damage (e.g., wind, tornado, rain, lightning, and hail), this study prefers to recognize it as an event type, separate from special alternative mentions of said types that they typify.</p>
 <pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*blizz?ard.*$&quot;, &quot;blizzard&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*chill.*$&quot;, &quot;wind chill&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*tornado.*$&quot;, &quot;tornado&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*funnel.*$&quot;, &quot;funnel cloud&quot;, storms$EVTYPE)
-storms$EVTYPE &lt;- gsub(&quot;^.*spout.*$&quot;, &quot;spout&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*spout.*$&quot;, &quot;waterspout&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*burst.*$&quot;, &quot;microburst&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*lightn?ing.*$&quot;, &quot;lightning&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*flood.*$&quot;, &quot;flood&quot;, storms$EVTYPE)
-storms$EVTYPE &lt;- gsub(&quot;^.*fog.*$&quot;, &quot;fog&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*break.*$&quot;, &quot;flood&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*dam failure.*$&quot;, &quot;flood&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*high water.*$&quot;, &quot;flood&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*rising water.*$&quot;, &quot;flood&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*[fv]og.*$&quot;, &quot;fog&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*surge.*$&quot;, &quot;storm surge&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*swell.*$&quot;, &quot;storm surge&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*trop.*$&quot;, &quot;tropical storm&quot;, storms$EVTYPE)
@@ -304,9 +351,10 @@ storms$EVTYPE &lt;- gsub(&quot;^.*hail.*$&quot;, &quot;hail&quot;, storms$EVTYPE
 storms$EVTYPE &lt;- gsub(&quot;^.*tstm.*$&quot;, &quot;thunderstorm&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*wall.*$&quot;, &quot;thunderstorm&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*thund.*$&quot;, &quot;thunderstorm&quot;, storms$EVTYPE)
-storms$EVTYPE &lt;- gsub(&quot;^.*wind.*$&quot;, &quot;wind&quot;, storms$EVTYPE)
-total_evtypes_after_some_fixes &lt;- nrow(data.frame(table(storms$EVTYPE)))</code></pre>
-<p>The process above has helped narrow things a bit… down from 692 distinct hand-written EVTYPEs to 391. That’s still too many.</p>
+storms$EVTYPE &lt;- gsub(&quot;^.*wi?nd.*$&quot;, &quot;wind&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*gustnado.*$&quot;, &quot;wind&quot;, storms$EVTYPE)
+total_evtypes_after_easy_fixes &lt;- nrow(data.frame(table(storms$EVTYPE)))</code></pre>
+<p>The process above has helped narrow things a bit… down from 674 distinct hand-written EVTYPEs to 366. That’s still too many.</p>
 <pre class="r"><code>total_evtypes_mentioning_snow &lt;- nrow(data.frame(table(storms[grep(&quot;snow&quot;,storms$EVTYPE),]$EVTYPE)))
 total_evtypes_mentioning_ice &lt;- nrow(data.frame(table(storms[grep(&quot;ice&quot;,storms$EVTYPE),]$EVTYPE)))</code></pre>
 <p>There are 90 remaining types mentioning snow, and another 26 mentioning ice, and…</p>
@@ -416,8 +464,12 @@ total_evtypes_mentioning_ice &lt;- nrow(data.frame(table(storms[grep(&quot;ice&q
 ## 102                   wet snow     1</code></pre>
 <p>… some overlap between the two, this analysis chooses to prioritize ice over snow (and throw in sleet as distinct.)</p>
 <pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*ice.*$&quot;, &quot;icy conditions&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*icy.*$&quot;, &quot;icy conditions&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*glaze.*$&quot;, &quot;icy conditions&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*snow.*$&quot;, &quot;snow&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*sleet.*$&quot;, &quot;sleet&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*heavy mix.*$&quot;, &quot;sleet&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*mixed precip.*$&quot;, &quot;sleet&quot;, storms$EVTYPE)
 data.frame(table(storms[grep(&quot;wint?er&quot;,storms$EVTYPE),]$EVTYPE))</code></pre>
 <pre><code>##                 Var1  Freq
 ## 1         winter mix     3
@@ -425,8 +477,10 @@ data.frame(table(storms[grep(&quot;wint?er&quot;,storms$EVTYPE),]$EVTYPE))</code
 ## 3     winter weather  7045
 ## 4 winter weather mix  1110
 ## 5        wintery mix     2</code></pre>
-<p>A quick look at mentions of winter do not betray anything that seems inappropriate to lumping them together as well.</p>
+<p>Note: the NOAA’s definition of <em>mixed precipitation</em> (<a href="http://forecast.weather.gov/glossary.php?word=mixed%20precipitation">http://forecast.weather.gov/glossary.php?word=mixed%20precipitation</a>) fails over to sleet when not otherwise specified, so I have done the same.</p>
+<p>Now, A quick look at mentions of winter do not betray anything that seems inappropriate to lumping them together as well.</p>
 <pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*winte?r.*$&quot;, &quot;winter storm&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*mix.*$&quot;, &quot;winter storm&quot;, storms$EVTYPE)
 data.frame(table(storms[grep(&quot;freez|cool|cold&quot;,storms$EVTYPE),]$EVTYPE))</code></pre>
 <pre><code>##                             Var1 Freq
 ## 1            agricultural freeze    6
@@ -464,13 +518,23 @@ data.frame(table(storms[grep(&quot;freez|cool|cold&quot;,storms$EVTYPE),]$EVTYPE
 ## 33             unseasonably cool   12
 ## 34        unseasonably cool  wet    2
 ## 35                unusually cold    8</code></pre>
-<p>Meanwhile, still on the cold weather tack, it looks like we DO need to make a distinction between a freeze (cold snap) and freezing rain. Then again, looking at <em>cool</em> and <em>cold</em> most reference particular cold, which is probably inferrable as <em>freezing</em> as well.</p>
+<p>Meanwhile, still on the cold weather tack, it looks like we DO need to make a distinction between a freeze (cold snap) and freezing rain. Then again, looking at <em>cool</em> and <em>cold</em> most reference particular cold, which is probably inferrable as <em>freezing</em> as well. I’m also using a value judgement to toss in references to hypothermia under <em>freezing temperatures</em>.</p>
 <pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*freezing.*$&quot;, &quot;freezing rain&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*freeze.*$&quot;, &quot;freezing temperatures&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*frost.*$&quot;, &quot;freezing temperatures&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*cold.*$&quot;, &quot;freezing temperatures&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*hypo.*$&quot;, &quot;freezing temperatures&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*cool.*$&quot;, &quot;unusually cool&quot;, storms$EVTYPE)
-total_evtypes_after_freezing &lt;- nrow(data.frame(table(storms$EVTYPE)))
+storms$EVTYPE &lt;- gsub(&quot;^.*low temp.*$&quot;, &quot;unusually cool&quot;, storms$EVTYPE)
+total_evtypes_after_freezing &lt;- nrow(data.frame(table(storms$EVTYPE)))</code></pre>
+<p>In similar vein, let us box up any mention of <em>warmth</em> or <em>heat</em>, while preserving mention of droughts or odd <em>dryness</em> (which could lead to <em>drought</em> but may not have reached those levels yet):</p>
+<pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*drou.*$&quot;, &quot;drought&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*dry.*$&quot;, &quot;unusually dry&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*below normal precipitation.*$&quot;, &quot;unusually dry&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*warm.*$&quot;, &quot;unusually warm&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*heat.*$&quot;, &quot;extreme heat&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*hyper.*$&quot;, &quot;extreme heat&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*dust.*$&quot;, &quot;dusty weather&quot;, storms$EVTYPE)
 data.frame(table(storms[grep(&quot;^(?!freezing ).*rain|wet&quot;,storms$EVTYPE, perl=T),]$EVTYPE))</code></pre>
 <pre><code>##                             Var1  Freq
 ## 1                 abnormally wet     1
@@ -498,208 +562,189 @@ data.frame(table(storms[grep(&quot;^(?!freezing ).*rain|wet&quot;,storms$EVTYPE,
 ## 23               record rainfall    14
 ## 24               torrential rain     1
 ## 25           torrential rainfall     1
-## 26        unseasonably warm  wet     1
-## 27         unseasonably warm wet     2
-## 28              unseasonably wet    19
-## 29               unseasonal rain     2
-## 30                     wet month     4
-## 31                   wet weather     1
-## 32                      wet year     4</code></pre>
-<p>In similar vein, let us box up any mention of <em>warmth</em> or <em>heat</em>, while preserving mention of droughts or odd <em>dryness</em> (which could lead to <em>drought</em> but may not have reached those levels yet):</p>
-<pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*drou.*$&quot;, &quot;drought&quot;, storms$EVTYPE)
-storms$EVTYPE &lt;- gsub(&quot;^.*dry.*$&quot;, &quot;unusually dry&quot;, storms$EVTYPE)
-storms$EVTYPE &lt;- gsub(&quot;^.*warm.*$&quot;, &quot;unusually warm&quot;, storms$EVTYPE)
-storms$EVTYPE &lt;- gsub(&quot;^.*heat.*$&quot;, &quot;extreme heat&quot;, storms$EVTYPE)</code></pre>
-<p>Down to 244 evtypes, when we began with 985. Given that there are still more to go, and the recent mention of freezing rain, I’ve just looked at any mentions of rain or general wetness, above. Given that many of the references to ‘wet’ seem to infer periods of time in excess of any given storm, they will be kept separate. Further, references to lightning may want to be separate from rain, as well.</p>
+## 26              unseasonably wet    19
+## 27               unseasonal rain     2
+## 28                     wet month     4
+## 29                   wet weather     1
+## 30                      wet year     4</code></pre>
+<p>Down to 209 evtypes, when we began with 985. Given that there are still more to go, and the recent mention of freezing rain, I’ve just looked at any mentions of rain or general wetness, above. Given that many of the references to ‘wet’ seem to infer periods of time in excess of any given storm, they will be kept separate.</p>
 <pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*wet.*$&quot;, &quot;prolonged damp&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^(?!freezing).*rain.*$&quot;, &quot;rain&quot;, storms$EVTYPE, perl=T)
+storms$EVTYPE &lt;- gsub(&quot;^.*precip.*$&quot;, &quot;rain&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*shower.*$&quot;, &quot;rain&quot;, storms$EVTYPE)
 total_evtypes_after_rain &lt;- nrow(data.frame(table(storms$EVTYPE)))
 data.frame(table(storms$EVTYPE))</code></pre>
-<pre><code>##                           Var1   Freq
-## 1                                   2
-## 2                apache county      1
-## 3       astronomical high tide    103
-## 4        astronomical low tide    174
-## 5                     avalance      1
-## 6                    avalanche    386
-## 7                 beach erosin      1
-## 8                beach erosion      4
-## 9   below normal precipitation      2
-## 10                    blizzard   2745
-## 11                blowing dust      4
-## 12                blowout tide      2
-## 13                  brush fire      4
-## 14             coastal erosion      1
-## 15               coastal storm     10
-## 16                coastalstorm      1
-## 17                   dam break      4
-## 18                 dam failure      1
-## 19                 dense smoke     10
-## 20                driest month      1
-## 21                     drought   2505
-## 22                    drowning      1
-## 23                  dust devel      1
-## 24                  dust devil    149
-## 25                  dust storm    427
-## 26                   duststorm      1
-## 27                   excessive      1
-## 28     excessive precipitation      1
-## 29                extreme heat   2630
-## 30             flash floooding      1
-## 31                       flood  82731
-## 32                         fog   1883
-## 33                 forest fire      1
-## 34               freezing rain    309
-## 35       freezing temperatures   2395
-## 36                funnel cloud   6991
-## 37                       glaze     43
-## 38                  grass fire      1
-## 39                    gustnado      6
-## 40                gustnado and      1
-## 41                        hail 290397
-## 42              hazardous surf      1
-## 43                   heavy mix      8
-## 44         heavy precipatation      1
-## 45         heavy precipitation      3
-## 46                   heavy sea      2
-## 47                heavy shower      3
-## 48                  heavy surf     87
-## 49        heavy surf high surf    228
-## 50                        high      1
-## 51                    high sea      8
-## 52                   high surf    734
-## 53         high surf advisorie      1
-## 54          high surf advisory      5
-## 55     high temperature record      3
-## 56                   high tide      2
-## 57                  high water      6
-## 58                   high wave      3
-## 59                 hot pattern      1
-## 60                   hot spell      2
-## 61                 hot weather      1
-## 62                   hurricane    174
-## 63           hurricane edouard      2
-## 64             hurricane emily      1
-## 65              hurricane erin      7
-## 66             hurricane felix      2
-## 67            hurricane gordon      1
-## 68              hurricane opal      9
-## 69           hurricane typhoon     88
-## 70       hyperthermia exposure      1
-## 71                 hypothermia      1
-## 72        hypothermia exposure      6
-## 73              icy conditions   2179
-## 74                    icy road     32
-## 75                   landslide    608
-## 76                   landslump      2
-## 77                   lightning  15779
-## 78                   ligntning      1
-## 79             low temperature      7
-## 80      low temperature record      1
-## 81             marine accident      1
-## 82               marine mishap      2
-## 83             metro storm may      1
-## 84                  microburst    224
-## 85                mild pattern      1
-## 86                mixed precip     10
-## 87         mixed precipitation     37
-## 88       monthly precipitation     36
-## 89         monthly temperature      4
-## 90              mud rock slide      1
-## 91                   mud slide      8
-## 92                    mudslide     26
-## 93          mudslide landslide      1
-## 94           no severe weather      1
-## 95                        none      2
-## 96        normal precipitation      3
-## 97              northern light      1
-## 98                       other     52
-## 99              prolonged damp     31
-## 100                       rain  11846
-## 101       rapidly rising water      1
-## 102                record high      7
-## 103    record high temperature      4
-## 104                 record low      4
-## 105       record precipitation      1
-## 106         record temperature     21
-## 107          red flag criteria      2
-## 108           red flag fire wx      2
-## 109          remnants of floyd      2
-## 110                rip current    774
-## 111    rip currents heavy surf      3
-## 112                 rock slide      2
-## 113                 rogue wave      1
-## 114                  rough sea      3
-## 115                 rough surf      4
-## 116               saharan dust      4
-## 117                     seiche     21
-## 118          severe turbulence      1
-## 119                      sleet     91
-## 120               small stream      1
-## 121           small stream and      1
-## 122             sml stream fld      2
-## 123                      smoke     11
-## 124                       snow  17587
-## 125                  southeast      1
-## 126                      spout   3850
-## 127                storm surge    421
-## 128             summary august     11
-## 129                summary jan      1
-## 130               summary july      1
-## 131               summary june      3
-## 132                summary nov      3
-## 133                summary oct      1
-## 134            summary october      1
-## 135           summary of april      6
-## 136         summary of aprilrd      1
-## 137          summary of august      1
-## 138            summary of july      6
-## 139            summary of june     15
-## 140           summary of march      7
-## 141             summary of may      5
-## 142          summary of may am      3
-## 143          summary of may pm      3
-## 144               summary sept      2
-## 145          summary september      5
-## 146         temperature record     43
-## 147               thunderstorm 335694
-## 148                    tornado  60700
-## 149                    torndao      1
-## 150             tropical storm    757
-## 151                    tsunami     20
-## 152                    typhoon     11
-## 153           unseasonably hot     10
-## 154        unseasonal low temp      2
-## 155             unusually cool     21
-## 156              unusually dry    109
-## 157             unusually warm    313
-## 158            urban and small      2
-## 159     urban and small stream      3
-## 160                urban small      3
-## 161         urban small stream      8
-## 162      urban small strm fldg      1
-## 163       urban sml stream fld   3392
-## 164      urban sml stream fldg      1
-## 165                        vog      1
-## 166               volcanic ash     23
-## 167         volcanic ash plume      1
-## 168           volcanic ashfall      3
-## 169          volcanic eruption      2
-## 170                  wild fire      4
-## 171           wild forest fire   1458
-## 172                   wildfire   2769
-## 173                       wind  28136
-## 174               winter storm  19690
-## 175                        wnd      1</code></pre>
-<p>Now for a quick look at all 175 EVTYPEs remaining. The list is a bit long (apologies), but still significantly shorter than what we began with, and without any <em>noticeable</em> cases of miscategorization. We’ll be trying to clean up easily discernible edge cases here. Further, <em>wall clouds</em> generally are part of a thunderstorm, we’ll categorize them as such.</p>
+<pre><code>##                        Var1   Freq
+## 1                                2
+## 2             apache county      1
+## 3    astronomical high tide    103
+## 4     astronomical low tide    174
+## 5                  avalance      1
+## 6                 avalanche    386
+## 7              beach erosin      1
+## 8             beach erosion      4
+## 9                  blizzard   2745
+## 10             blowout tide      2
+## 11               brush fire      4
+## 12          coastal erosion      1
+## 13            coastal storm     10
+## 14             coastalstorm      1
+## 15              dense smoke     10
+## 16             driest month      1
+## 17                  drought   2505
+## 18                 drowning      1
+## 19            dusty weather    586
+## 20                excessive      1
+## 21             extreme heat   2631
+## 22          flash floooding      1
+## 23                    flood  82743
+## 24                      fog   1884
+## 25              forest fire      1
+## 26            freezing rain    309
+## 27    freezing temperatures   2402
+## 28             funnel cloud   6991
+## 29               grass fire      1
+## 30                     hail 290397
+## 31           hazardous surf      1
+## 32                heavy sea      2
+## 33               heavy surf     87
+## 34     heavy surf high surf    228
+## 35                     high      1
+## 36                 high sea      8
+## 37                high surf    734
+## 38      high surf advisorie      1
+## 39       high surf advisory      5
+## 40  high temperature record      3
+## 41                high tide      2
+## 42                high wave      3
+## 43              hot pattern      1
+## 44                hot spell      2
+## 45              hot weather      1
+## 46                hurricane    174
+## 47        hurricane edouard      2
+## 48          hurricane emily      1
+## 49           hurricane erin      7
+## 50          hurricane felix      2
+## 51         hurricane gordon      1
+## 52           hurricane opal      9
+## 53        hurricane typhoon     88
+## 54           icy conditions   2254
+## 55                landslide    608
+## 56                landslump      2
+## 57                lightning  15779
+## 58                ligntning      1
+## 59          marine accident      1
+## 60            marine mishap      2
+## 61          metro storm may      1
+## 62               microburst    224
+## 63             mild pattern      1
+## 64      monthly temperature      4
+## 65           mud rock slide      1
+## 66                mud slide      8
+## 67                 mudslide     26
+## 68       mudslide landslide      1
+## 69        no severe weather      1
+## 70                     none      2
+## 71           northern light      1
+## 72                    other     52
+## 73           prolonged damp     31
+## 74                     rain  11894
+## 75              record high      7
+## 76  record high temperature      4
+## 77               record low      4
+## 78       record temperature     21
+## 79        red flag criteria      2
+## 80         red flag fire wx      2
+## 81        remnants of floyd      2
+## 82              rip current    774
+## 83  rip currents heavy surf      3
+## 84               rock slide      2
+## 85               rogue wave      1
+## 86                rough sea      3
+## 87               rough surf      4
+## 88                   seiche     21
+## 89        severe turbulence      1
+## 90                    sleet    146
+## 91             small stream      1
+## 92         small stream and      1
+## 93           sml stream fld      2
+## 94                    smoke     11
+## 95                     snow  17587
+## 96                southeast      1
+## 97              storm surge    421
+## 98       temperature record     43
+## 99             thunderstorm 335725
+## 100           to be ignored     44
+## 101                 tornado  60700
+## 102                 torndao      1
+## 103          tropical storm    757
+## 104                 tsunami     20
+## 105                 typhoon     11
+## 106        unseasonably hot     10
+## 107          unusually cool     31
+## 108           unusually dry    111
+## 109          unusually warm    313
+## 110         urban and small      2
+## 111  urban and small stream      3
+## 112             urban small      3
+## 113      urban small stream      8
+## 114   urban small strm fldg      1
+## 115    urban sml stream fld   3392
+## 116   urban sml stream fldg      1
+## 117            volcanic ash     23
+## 118      volcanic ash plume      1
+## 119        volcanic ashfall      3
+## 120       volcanic eruption      2
+## 121              waterspout   3850
+## 122               wild fire      4
+## 123        wild forest fire   1458
+## 124                wildfire   2769
+## 125                    wind  28144
+## 126            winter storm  19690</code></pre>
+<p>Now for a quick look at all 126 EVTYPEs remaining. The list is a bit long (apologies), but still significantly shorter than what we began with, and without any <em>noticeable</em> cases of miscategorization. We’ll be trying to clean up easily discernible edge cases here. Further, <em>wall clouds</em> generally are part of a thunderstorm, we’ll categorize them as such.</p>
 <pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*volc.*$&quot;, &quot;volcanic activity&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*smoke.*$&quot;, &quot;smoke&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*slide.*$&quot;, &quot;landslide&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*slump.*$&quot;, &quot;landslide&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*avalan.*$&quot;, &quot;avalanche&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*fire.*$&quot;, &quot;wildfire&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*hurr.*$&quot;, &quot;hurricane&quot;, storms$EVTYPE)
 storms$EVTYPE &lt;- gsub(&quot;^.*typhoon.*$&quot;, &quot;hurricane&quot;, storms$EVTYPE)</code></pre>
 <p>Note: The data itself seems to force an overlap between <em>hurricane</em> (atlantic storm) and <em>typhoon</em> (pacific storm.) I’d have preferred to keep them separate since how the USA is set up to deal with either may be difference… but the above made that relatively improbable. So they are put together.</p>
-<p>There seems to be some emphasis on ‘urban sml stream fld’ so we’ll preserve that as well, separate from other flooding:</p>
-<pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*stre?a?m.*$&quot;, &quot;stream flood&quot;, storms$EVTYPE)</code></pre>
+<p>There seems to be some emphasis on ‘urban sml stream fld’ so we’ll preserve that as well, separate from other flooding. Futher, since so many had referenced urban, and some that DO reference urban do NOT reference floods, per se, we’ll choose to believe they meant to:</p>
+<pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*stre?a?m.*$&quot;, &quot;localized flood&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*urban.*$&quot;, &quot;localized flood&quot;, storms$EVTYPE)</code></pre>
+<p>Let’s also engage with references to nonflood water conditions:</p>
+<pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^rough.*$&quot;, &quot;rough water&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*seiche.*$&quot;, &quot;rough water&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*surf.*$&quot;, &quot;rough water&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*high sea.*$&quot;, &quot;rough water&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*high wave.*$&quot;, &quot;rough water&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*high tide.*$&quot;, &quot;high tide&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*blowout tide.*$&quot;, &quot;high tide&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*low tide.*$&quot;, &quot;low tide&quot;, storms$EVTYPE)</code></pre>
+<p>Now this anaylsis needs to explore any mention of extremities. Because the terminology used is relative in nature (e.g., a record low of 40F in the middle of August does not constitute <em>freeze temperatures</em>) I’ll have to categorize under <em>unsually cool</em>, instead. Vice versa, as well.</p>
+<pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*high temp.*$&quot;, &quot;unusually warm&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*record high.*$&quot;, &quot;unusually warm&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*hot.*$&quot;, &quot;unusually warm&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*low temp.*$&quot;, &quot;unusually cool&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*record low.*$&quot;, &quot;unusually cool&quot;, storms$EVTYPE)
+data.frame(table(storms[grep(&quot;record&quot;,storms$EVTYPE),]$EVTYPE))</code></pre>
+<pre><code>##                 Var1 Freq
+## 1 record temperature   21
+## 2 temperature record   43</code></pre>
+<p>But, notice that we now have a not unappreciate number of records referring to record temperatures. Let’s see what consequences we have from each:</p>
+<pre class="r"><code>total_fatalities_from_record_temperatures &lt;- max(storms[grep(&quot;record&quot;,storms$EVTYPE),]$FATALITIES)
+total_crop_damage_from_record_temperatures &lt;- max(storms[grep(&quot;record&quot;,storms$EVTYPE),]$FATALITIES)
+total_property_damage_from_record_temperatures &lt;- max(storms[grep(&quot;record&quot;,storms$EVTYPE),]$FATALITIES)</code></pre>
+<p>The results being, 0 total maximum fatalities, 0 incident maximum crop damage, and 0 in property damage. A cursory examinination of the columns of data available, there appears to be no reliable algorithmic way to discern whether these were highs or lows, and given the above maximum, I have to elect to render these records mute to this study.</p>
+<pre class="r"><code>storms$EVTYPE &lt;- gsub(&quot;^.*record.*$&quot;, &quot;to be ignored&quot;, storms$EVTYPE)
+storms$EVTYPE &lt;- gsub(&quot;^.*other.*$&quot;, &quot;to be ignored&quot;, storms$EVTYPE)</code></pre>
+<p>Finally, this leaves just a handful of outlier EVTYPEs that either can’t significantly alter this study or are not quickly identifiable as any other particular type. The choice made at this juncture is to isolate any that have a count of less than 10 instances, and stale them for elimination:</p>
+<pre class="r"><code>evtype_names &lt;- data.frame(table(storms$EVTYPE))
+storms[storms$EVTYPE %in% evtype_names[evtype_names$Freq &lt; 10,]$Var1,]$EVTYPE &lt;- 'to be ignored'
+storms$EVTYPE &lt;- as.factor(storms$EVTYPE)</code></pre>
+<p>And that leaves us with 41 distinct event types to consider for the rest of our analysis.</p>
 </div>
 </div>
 
