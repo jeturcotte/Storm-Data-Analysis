@@ -31,15 +31,31 @@ storms$EVTYPE <- gsub("[/\\]", " ", storms$EVTYPE)
 storms$EVTYPE <- gsub("[[:punct:]]", "", storms$EVTYPE)
 ```
 
-Having looked over the EVTYPES repeatedly while doing this, I did notice a section of items that seemed to be getting special attention without being particularly explicit as to what they were.  I don't want to abandoned them just yet, so I'm isolating them below, as previous attempts to grep through the REMARKS field proved deleteriously long.
+Just setting every EVTYPE to lowercase dropped the variety from `r total_evtypes_before_any_fixes` down to `r total_evtypes_after_lowercase`.  That's not insignificant.  
 
-```{r}
-summaries <- storms[grep(["summary"], storms$EVTYPE),])
+Having looked over these EVTYPES repeatedly while doing this, I did notice a section of items that seemed to be getting special attention without being particularly explicit as to what they were.  I don't want to abandoned them just yet, so I'm isolating them below, as previous attempts to grep through the REMARKS field proved deleteriously long.
+
+```{r set aside subset of summary entries}
+summaries <- storms[grep("summary", storms$EVTYPE),]
+summaries$REMARKS <- as.character(summaries$REMARKS)
+summary(summaries)
 ```
 
-As you can see, we have dated summaries... but of what?
+There appear to be, out of `r nrow(summaries)` records, `r nrow(summaries[grep("thunder",summaries$REMARKS),])` that mention thunderstorms.  So let's look at those that don't:
 
-Just setting every EVTYPE to lowercase dropped the variety from `r total_evtypes_before_any_fixes` down to `r total_evtypes_after_lowercase`.  That's not insignificant.  Taking a quick look, a lot of the EVTYPE values entered seem to be nearly unique, and involving deeply specific values:
+```{r find any summary entry that does not mention thunderstorms}
+summaries[!grepl("thunder",tolower(summaries$REMARKS)),]$REMARKS
+```
+
+So we have entries referring to a flood and to a blizzard.  All the rest mention thunderstorms.  Many, however, including the flood-only reference ALSO reference 'later entries.'  In other words, other rows.  Counting both brings the danger of double-counting data.  So, let's set aside the blizzard, mark any others that do NOT mention 'additional reports' as thunderstorms, and the rest as to be ignored.
+
+```{r adjust storms data according to summary entries}
+storms[storms$REFNUM==summaries[grepl("blizzard",tolower(summaries$REMARKS)),]$REFNUM,]$EVTYPE <- 'blizzard'
+storms[storms$REFNUM %in% summaries[!grepl("additional",tolower(summaries$REMARKS)),]$REFNUM,]$EVTYPE <- 'thunderstorm'
+storms$EVTYPE <- gsub("^.*summary.*$", "to be ignored", storms$EVTYPE)
+```
+
+Given that we'd seen a lot of numbers in the names of these EVTYPES, let's look at any that may be left:
 
 ```{r looking at numeric references}
 data.frame(table(storms[grep("\\s*[a-z]*\\d+",storms$EVTYPE),]$EVTYPE))
@@ -153,12 +169,6 @@ total_evtypes_after_rain <- nrow(data.frame(table(storms$EVTYPE)))
 data.frame(table(storms$EVTYPE))
 ```
 
-We seem to have a lot of items listed as *summary*.  This isn't particularly useful as an EVTYPE, but they did seem to get special care, so let's take a quick look at what's going on inside their REMARKS.
-
-```{r checking out summary items}
-summaries <- storms[grep("summary",storms$EVTYPE),]
-```
-
 Now for a quick look at all `r total_evtypes_after_rain` EVTYPEs remaining.  The list is a bit long (apologies), but still significantly shorter than what we began with, and without any *noticeable* cases of miscategorization.  We'll be trying to clean up easily discernible edge cases here.  Further, *wall clouds* generally are part of a thunderstorm, we'll categorize them as such.
 
 ```{r}
@@ -210,7 +220,6 @@ But, notice that we now have a not unappreciate number of records referring to r
 total_fatalities_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
 total_crop_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
 total_property_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
-
 ```
 
 The results being, `r total_fatalities_from_record_temperatures` total maximum fatalities, `r total_crop_damage_from_record_temperatures` incident maximum crop damage, and `r total_property_damage_from_record_temperatures` in property damage.  A cursory examinination of the columns of data available, there appears to be no reliable algorithmic way to discern whether these were highs or lows, and given the above maximum, I have to elect to render these records mute to this study.
