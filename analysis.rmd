@@ -47,12 +47,20 @@ There appear to be, out of `r nrow(summaries)` records, `r nrow(summaries[grep("
 summaries[!grepl("thunder",tolower(summaries$REMARKS)),]$REMARKS
 ```
 
-So we have entries referring to a flood and to a blizzard.  All the rest mention thunderstorms.  Many, however, including the flood-only reference ALSO reference 'later entries.'  In other words, other rows.  Counting both brings the danger of double-counting data.  So, let's set aside the blizzard, mark any others that do NOT mention 'additional reports' as thunderstorms, and the rest as to be ignored.
+So we have entries referring to a flood and to a blizzard.  All the rest mention thunderstorms.  Many, however, including the flood-only reference ALSO reference 'later entries.'  In other words, other rows.  Counting both brings the danger of double-counting data.  So, let's take a look, first:
+
+```{r checking out summaries for useful data}
+peak_fatalities_from_summaries <- max(summaries$FATALITIES)
+peak_injuries_from_summaries <- max(summaries$INJURIES)
+peak_crop_damage_from_summaries <- max(summaries$CROPDMG)
+peak_property_damage_from_summaries <- max(summaries$PROPDMG)
+```
+
+So, given that we have `r peak_fatalities_from_summaries` fatalities, `r peak_injuries_from_summaries` injuries, `r peak_crop_damage_from_summaries` crop damage, and `r peak_propery_damage_from_summaries` in property damages, these summaries appear to be distinctly and just that, containing no data for what are otherwise described as events of significance.  We will dispense with them.
 
 ```{r adjust storms data according to summary entries}
-storms[storms$REFNUM==summaries[grepl("blizzard",tolower(summaries$REMARKS)),]$REFNUM,]$EVTYPE <- 'blizzard'
-storms[storms$REFNUM %in% summaries[!grepl("additional",tolower(summaries$REMARKS)),]$REFNUM,]$EVTYPE <- 'thunderstorm'
 storms$EVTYPE <- gsub("^.*summary.*$", "to be ignored", storms$EVTYPE)
+rm(summaries)
 ```
 
 Given that we'd seen a lot of numbers in the names of these EVTYPES, let's look at any that may be left:
@@ -221,12 +229,12 @@ data.frame(table(storms[grep("record",storms$EVTYPE),]$EVTYPE))
 But, notice that we now have a not unappreciate number of records referring to record temperatures.  Let's see what consequences we have from each:
 
 ```{r counting up damages from records that remain}
-total_fatalities_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
-total_crop_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
-total_property_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
+peak_fatalities_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$FATALITIES)
+peak_crop_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$CROPDMG)
+peak_property_damage_from_record_temperatures <- max(storms[grep("record",storms$EVTYPE),]$PROPDMG)
 ```
 
-The results being, `r total_fatalities_from_record_temperatures` total maximum fatalities, `r total_crop_damage_from_record_temperatures` incident maximum crop damage, and `r total_property_damage_from_record_temperatures` in property damage.  A cursory examinination of the columns of data available, there appears to be no reliable algorithmic way to discern whether these were highs or lows, and given the above maximum, I have to elect to render these records mute to this study.
+The results being, `r peak_fatalities_from_record_temperatures` total maximum fatalities, `r peak_crop_damage_from_record_temperatures` incident maximum crop damage, and `r peak_property_damage_from_record_temperatures` in property damage.  A cursory examinination of the columns of data available, there appears to be no reliable algorithmic way to discern whether these were highs or lows, and given the above maximum, I have to elect to render these records mute to this study.
 
 ```{r opting to eliminate these as ignorable}
 storms$EVTYPE <- gsub("^.*record.*$", "to be ignored", storms$EVTYPE)
