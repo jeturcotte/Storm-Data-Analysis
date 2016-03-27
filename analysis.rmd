@@ -5,17 +5,25 @@ date: "March 21, 2016"
 output: html_document
 ---
 
-# Data Preparation
+# Synopsis
+
+# Data Processing
 
 ```{r loading the data}
+library(ggplot2)
+library(dplyr)
 storms <- read.csv("repdata-data-StormData.csv.bz2")
 ```
 
-## Slimming Memory Consumption by R
+## Slimming Memory
 
+First, a somewhat inconsequential move to slim down memory usage for the analysis.  Here we will concern ourselves with when, roughly where, type and damages.
 
+```{r}
+storms <- storms[,c("BGN_DATE","STATE","EVTYPE","F","MAG","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP","REMARKS","REFNUM")]
+```
 
-## Data Repair
+## Repairing the EVTYPEs
 
 A brief examination of the data set provided shows that the entry method behind EVTYPE was not strongly controlled. As a result, there are myriad (if often consisting of a population of 1) rows about the same event type that are simply spelled differently, wrongly, or with difference cases.  For example, there are 5 smaples of 'small hail', one sample of 'Small Hail' and 47 samples of 'SMALL HAIL.'
 
@@ -107,7 +115,7 @@ storms$EVTYPE <- gsub("^.*gustnado.*$", "wind", storms$EVTYPE)
 total_evtypes_after_easy_fixes <- nrow(data.frame(table(storms$EVTYPE)))
 ```
 
-The process above has helped narrow things a bit... down from `r total_evtypes_after_dropping_numbers` distinct hand-written EVTYPEs to `r total_evtypes_after_easy_fixes`.  That's still too many.
+The process above has helped narrow things a bit... down from `r total_evtypes_after_dropping_numbers` distinct hand-written EVTYPEs to `r total_evtypes_after_easy_fixes`.  That's still too many.  Please also note that these differ slightly from the categories recommended by the documentation provided for the collection OF this kind of data, insofar as the EVTYPE field shows all the signs of having been typed in, leaving room for improper interpretation, typos, and the like.  The categories I am salvaging from this will be close but ruled by what has been found in this data, instead.
 
 ```{r counting references to snow and ice}
 total_evtypes_mentioning_snow <- nrow(data.frame(table(storms[grep("snow",storms$EVTYPE),]$EVTYPE)))
@@ -250,3 +258,18 @@ storms$EVTYPE <- as.factor(storms$EVTYPE)
 ```
 
 And that leaves us with `r nrow(data.frame(table(storms$EVTYPE)))` distinct event types to consider for the rest of our analysis.
+
+## Normalizing the Damages
+
+Looking more closely at the columns involved in damages, which is what we need to look at to study the consequences of these incidents, we need to know the following from the documentation attached to the data we're studying:
+
+*Estimates should be rounded to three significant digits, followed by an alphabetical character signifying the magnitude of the number, i.e., 1.55B for $1,550,000,000. Alphabetical characters used to signify magnitude include “K” for thousands, “M” for millions, and “B” for billions.*
+
+But...
+
+```{r}
+storms %>% group_by(PROPDMGEXP) %>% summarize(population=length(REFNUM))
+storms %>% group_by(CROPDMGEXP) %>% summarize(population=length(REFNUM))
+```
+
+... we have a few more levels with values than merely *K*, *M*, and *B*, BUT these (including the unnamed factor) represent the overwhelming majority of records, so we'll discount the rest, given that this examine is to determine the most costly and the most deadly of weather incident types.
