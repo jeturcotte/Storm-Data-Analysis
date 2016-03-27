@@ -12,6 +12,7 @@ output: html_document
 ```{r loading the data}
 library(ggplot2)
 library(dplyr)
+library(reshape2)
 storms <- read.csv("repdata-data-StormData.csv.bz2")
 ```
 
@@ -272,15 +273,83 @@ storms %>% group_by(PROPDMGEXP) %>% summarize(population=length(REFNUM))
 storms %>% group_by(CROPDMGEXP) %>% summarize(population=length(REFNUM))
 ```
 
-... we have a few more levels with values than merely *K*, *M*, and *B*, BUT these (including the unnamed factor) represent the overwhelming majority of records, so we'll discount the rest, given that this examine is to determine the most costly and the most deadly of weather incident types.  Let's define a means of correcting the costly damage types, and run it against *PROPDMG* and *CROPDMG*.  We'll then toss the old columns.
+... we have a few more levels with values than merely *K*, *M*, and *B*, BUT these (including the unnamed factor) represent the overwhelming majority of records, so we'll discount the rest, given that this examine is to determine the most costly and the most deadly of weather incident types.  First, since we're looking at distinct subsets of the data, let's separate them out by focusing entirely on rows in the original data that contain relevant data.  Namely, crops, propery damage, injuries and fatalities.  Let's define a means of correcting the costly damage types, and run it against *PROPDMG* and *CROPDMG*.
 
-```{r}
+```{r isolating crop, propery, and casualty data into separate frames}
+# for memory management sake, cull the REMARKS column as no longer needed
+# also remove things that are being ignored intentionally
+storms <- storms[,!(names(storms)=="REMARKS")]
+storms <- storms[storms$EVTYPE!="to be ignored",]
+
+# subset our data
+crops <- storms[storms$CROPDMG > 0,]
+property <- storms[storms$CROPDMG > 0,]
+casualties <- storms[storms$INJURIES > 0 | storms$FATALITIES > 0,]
+
+# produce a means of interpreting the EXP columns
 normalize_damages <- function(d,e) { 
-     e <- tolower(e); 
+     e <- tolower(e) 
      if(e==""){d} 
      else if(e=="k"){d*1000} 
      else if(e=="m"){d*1000000} 
      else if(e=="b"){d*1000000000} 
      else {NA}
 }
+
+# get and summarize crop damage data
+crops$damages <- mapply(normalize_damages,crops$CROPDMG,crops$CROPDMGEXP)
+crop_damage <- melt(
+     crops %>% group_by(EVTYPE) %>% summarize(
+          mean=mean(damages,na.rm=T),
+          max=max(damages,na.rm=T),
+          total=sum(damages.na.rm=T)
+     )
+)
+colnames(crop_damage) = c("event","measure","amount")
+
+# get and summarize poperty damage data
+property$damages <- mapply(normalize_damages,property$PROPDMG,crops$PROPDMGEXP)
+prop_damage <- melt(
+     property %>% group_by(EVTYPE) %>% summarize(
+          mean=mean(damages,na.rm=T),
+          max=max(damages,na.rm=T),
+          total=sum(damages,na.rm=T)
+     )
+)
+colnames(prop_damage) = c("event","measure","amount")
+
+# get and summarize human damage data
+human_damage <- casualties %>% group_by(EVTYPE) %>% summarize(
+     mean_fatalities=mean(FATALITIES,na.rm=T), 
+     max_fatalities=max(FATALITIES,na.rm=T), 
+     mean_injuries=mean(INJURIES,na.rm=T), 
+     max_injuries=max(INJURIES,na.rm=T)
+)
+rm(storms)
 ```
+
+With the above, we can finally take a look at the results.
+
+# Results
+
+## Property Damage
+```{r graphing property damage}
+p <- ggplot(prop_damage[prop_damage$amount>0,], aes(reorder(event,amount,max),amount))
+p + stat_summary(fun.y='mean',geom='bar',aes(fill=measure),position="dodge") + coord_flip() + scale_y_log10(labels=scales::dollar) + labs(title="Property Damage by Type of Event",y="Dollar Amount",x="Event Type")
+```
+Given the great disparity in amount of property damage from one type to the next, here we opt to display this on a log10 scale, as measured in dollar lost.  The ordering of the events runs according to total damages incurred by the event/weather type, from most to least.  As you can see, wherever the total, maximum-per-storm, and mean-per-storm values are the same, we are observing a single event, as is the case here with *tsunami*.  Looking at *flood*ing as the worst offender, since the majorty of the total damages incurred is consumed by the maximum flood damages incurred, this tells us that while there are quite a few floods, the tolls can be accredited to just one or two particularly bad ones that may have occurred in particularly expensive locations.
+
+From this analysis, it appears that the most damaging event type the United States seems over time is *flooding* at `r scales::dollar(max(prop_damage[prop_damage$measure=="total",]$amount))` in combined damages, followed up by *hurricanes* and then *tornados* and *hail*.  In terms of the mean impact of any one typical event, the worst among them is the *hurricane* at an average in `r scales::dollar(max(prop_damage[prop_damage$measure=="mean",]$amount))` in damages, followed up by *tsunamis* and *floods*.
+
+## Crop Damage
+```{r graphing crop damage}
+p <- ggplot(crop_damage[crop_damage$amount>0,], aes(reorder(event,amount,max),amount))
+p + stat_summary(fun.y='mean',geom='bar',aes(fill=measure),position="dodge") + coord_flip() + scale_y_log10(labels=scales::dollar) + labs(title="Crop Damage by Type of Event",y="Dollar Amount",x="Event Type")
+```
+We see here a very fairly different spread of damage incurred to crops by the same slew of event or weather types.  Again, the ordering is based on total damages incurred over the entire timeline of the data provided, with the worst offender at the top, being *drought* in this case, at a grand total of `r scales::dollar(max(crop_damage[crop_damage$measure=="total",]$amount))` in damages done.  Following that, *floods*, *hurricanes*, and *icy conditions* or *freezing temperatures* clock in as the most persisent and costly incidents.
+
+In terms of damage by anyone TYPE of event, *icy conditions* rank the worst at an average `r scales::dollar(max(crop_damage[crop_damage$measure=="mean",]$amount))` per incident, followed up by what appears to be a singularly bad incident of *prolonged damp weather* and *hurricanes*.
+
+## Casualties
+
+
