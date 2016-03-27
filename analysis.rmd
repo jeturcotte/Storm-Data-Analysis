@@ -3,13 +3,16 @@ title: "Storm Data Analysis"
 author: "J.E. Turcotte"
 date: "March 21, 2016"
 output: html_document
+keep_md: true
 ---
 
 # Synopsis
 
+In this study, we examine a wide variety of natural disaster and weather events that incurred recorded property and crop damages as well as human death tolls between the years 1966 and 2011.  In so doing, it was discovered that the recorded types were highly prone to human error and required extensive repair and some amount of personal judgement to winnow to a reviewable number of categories, including storms, tornados, rough water, hot and cold conditions and so on.  Doing this, this study captures data on mean incident damages, maximum singular incident damages, and total damages over the entire data set.  To that end, it has been determined that, in terms of property damage, *flooding* incurs the most total damage while a *tsunami* incurred the most in any one incident.  For crops, *drought* as done the most damage, but *icy conditions* do the most consistent damage.  And, terribly, *tornados* take the most human life all told while *extreme heat* takes more like on average.
+
 # Data Processing
 
-```{r loading the data}
+```{r loading the data, message=F, warning=F}
 library(ggplot2)
 library(dplyr)
 library(reshape2)
@@ -65,7 +68,7 @@ peak_crop_damage_from_summaries <- max(summaries$CROPDMG)
 peak_property_damage_from_summaries <- max(summaries$PROPDMG)
 ```
 
-So, given that we have `r peak_fatalities_from_summaries` fatalities, `r peak_injuries_from_summaries` injuries, `r peak_crop_damage_from_summaries` crop damage, and `r peak_propery_damage_from_summaries` in property damages, these summaries appear to be distinctly and just that, containing no data for what are otherwise described as events of significance.  We will dispense with them.
+So, given that we have `r peak_fatalities_from_summaries` fatalities, `r peak_injuries_from_summaries` injuries, `r peak_crop_damage_from_summaries` crop damage, and `r peak_property_damage_from_summaries` in property damages, these summaries appear to be distinctly and just that, containing no data for what are otherwise described as events of significance.  We will dispense with them.
 
 ```{r adjust storms data according to summary entries}
 storms$EVTYPE <- gsub("^.*summary.*$", "to be ignored", storms$EVTYPE)
@@ -160,8 +163,8 @@ storms$EVTYPE <- gsub("^.*freeze.*$", "freezing temperatures", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*frost.*$", "freezing temperatures", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*cold.*$", "freezing temperatures", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*hypo.*$", "freezing temperatures", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*cool.*$", "unusually cool", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*low temp.*$", "unusually cool", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*cool.*$", "unusual cold", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*low temp.*$", "unusual cold", storms$EVTYPE)
 total_evtypes_after_freezing <- nrow(data.frame(table(storms$EVTYPE)))
 ```
 
@@ -171,17 +174,17 @@ In similar vein, let us box up any mention of *warmth* or *heat*, while preservi
 storms$EVTYPE <- gsub("^.*drou.*$", "drought", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*dry.*$", "unusually dry", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*below normal precipitation.*$", "unusually dry", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*warm.*$", "unusually warm", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*warm.*$", "unusual heat", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*heat.*$", "extreme heat", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*hyper.*$", "extreme heat", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*dust.*$", "dusty weather", storms$EVTYPE)
 data.frame(table(storms[grep("^(?!freezing ).*rain|wet",storms$EVTYPE, perl=T),]$EVTYPE))
 ```
 
-Down to `r total_evtypes_after_freezing` evtypes, when we began with `r total_evtypes_before_any_fixes`.  Given that there are still more to go, and the recent mention of freezing rain, I've just looked at any mentions of rain or general wetness, above.  Given that many of the references to 'wet' seem to infer periods of time in excess of any given storm, they will be kept separate.
+Down to `r total_evtypes_after_freezing` evtypes, when we began with `r total_evtypes_before_any_fixes`.  Given that there are still more to go, and the recent mention of freezing rain, I've just looked at any mentions of rain or general wetness, above.
 
 ```{r cleaning up nonfreezing references to wet and rain}
-storms$EVTYPE <- gsub("^.*wet.*$", "prolonged damp", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*wet.*$", "rain", storms$EVTYPE)
 storms$EVTYPE <- gsub("^(?!freezing).*rain.*$", "rain", storms$EVTYPE, perl=T)
 storms$EVTYPE <- gsub("^.*precip.*$", "rain", storms$EVTYPE)
 storms$EVTYPE <- gsub("^.*shower.*$", "rain", storms$EVTYPE)
@@ -227,11 +230,11 @@ storms$EVTYPE <- gsub("^.*low tide.*$", "low tide", storms$EVTYPE)
 Now this anaylsis needs to explore any mention of extremities.  Because the terminology used is relative in nature (e.g., a record low of 40F in the middle of August does not constitute *freeze temperatures*) I'll have to categorize under *unsually cool*, instead.  Vice versa, as well.
 
 ```{r record temperatures}
-storms$EVTYPE <- gsub("^.*high temp.*$", "unusually warm", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*record high.*$", "unusually warm", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*hot.*$", "unusually warm", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*low temp.*$", "unusually cool", storms$EVTYPE)
-storms$EVTYPE <- gsub("^.*record low.*$", "unusually cool", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*high temp.*$", "unusual heat", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*record high.*$", "unusual heat", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*hot.*$", "unusual heat", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*low temp.*$", "unusual cold", storms$EVTYPE)
+storms$EVTYPE <- gsub("^.*record low.*$", "unusual cold", storms$EVTYPE)
 data.frame(table(storms[grep("record",storms$EVTYPE),]$EVTYPE))
 ```
 
@@ -275,18 +278,24 @@ storms %>% group_by(CROPDMGEXP) %>% summarize(population=length(REFNUM))
 
 ... we have a few more levels with values than merely *K*, *M*, and *B*, BUT these (including the unnamed factor) represent the overwhelming majority of records, so we'll discount the rest, given that this examine is to determine the most costly and the most deadly of weather incident types.  First, since we're looking at distinct subsets of the data, let's separate them out by focusing entirely on rows in the original data that contain relevant data.  Namely, crops, propery damage, injuries and fatalities.  Let's define a means of correcting the costly damage types, and run it against *PROPDMG* and *CROPDMG*.
 
-```{r isolating crop, propery, and casualty data into separate frames}
+```{r culling unnecessary columns and rows}
 # for memory management sake, cull the REMARKS column as no longer needed
 # also remove things that are being ignored intentionally
 storms <- storms[,!(names(storms)=="REMARKS")]
 storms <- storms[storms$EVTYPE!="to be ignored",]
+```
 
-# subset our data
+Next, let's subset our data for quicker and more exact exploration:
+
+```{r isolating crop, propery, and casualty data into separate frames}
 crops <- storms[storms$CROPDMG > 0,]
 property <- storms[storms$CROPDMG > 0,]
 casualties <- storms[storms$INJURIES > 0 | storms$FATALITIES > 0,]
+```
 
-# produce a means of interpreting the EXP columns
+We will need a function to interpret all those K's and B's:
+
+```{r}
 normalize_damages <- function(d,e) { 
      e <- tolower(e) 
      if(e==""){d} 
@@ -295,19 +304,25 @@ normalize_damages <- function(d,e) {
      else if(e=="b"){d*1000000000} 
      else {NA}
 }
+```
 
-# get and summarize crop damage data
+Using the above, let's get normalized damage data for crops:
+
+```{r normalizing crop data}
 crops$damages <- mapply(normalize_damages,crops$CROPDMG,crops$CROPDMGEXP)
 crop_damage <- melt(
      crops %>% group_by(EVTYPE) %>% summarize(
           mean=mean(damages,na.rm=T),
           max=max(damages,na.rm=T),
-          total=sum(damages.na.rm=T)
+          total=sum(damages,na.rm=T)
      )
 )
 colnames(crop_damage) = c("event","measure","amount")
+```
 
-# get and summarize poperty damage data
+Using the above, let's get normalized damage data for property:
+
+```{r normalizing property data}
 property$damages <- mapply(normalize_damages,property$PROPDMG,crops$PROPDMGEXP)
 prop_damage <- melt(
      property %>% group_by(EVTYPE) %>% summarize(
@@ -317,39 +332,56 @@ prop_damage <- melt(
      )
 )
 colnames(prop_damage) = c("event","measure","amount")
+```
 
-# get and summarize human damage data
-human_damage <- casualties %>% group_by(EVTYPE) %>% summarize(
-     mean_fatalities=mean(FATALITIES,na.rm=T), 
-     max_fatalities=max(FATALITIES,na.rm=T), 
-     mean_injuries=mean(INJURIES,na.rm=T), 
-     max_injuries=max(INJURIES,na.rm=T)
+Using the above, let's compute mean, maximum, and total human losses incurred during these events:
+
+```{r measuring fatality counts}
+human_damage <- melt(
+     casualties %>% group_by(EVTYPE) %>% summarize(
+          mean_fatalities=mean(FATALITIES,na.rm=T), 
+          max_fatalities=max(FATALITIES,na.rm=T),
+          total_fatalities=sum(FATALITIES,na.rm=T)
+     )
 )
+colnames(human_damage) = c("event","measure","amount")
 rm(storms)
 ```
 
-With the above, we can finally take a look at the results.
+With all these, now we can visualize our results.
 
 # Results
 
 ## Property Damage
-```{r graphing property damage}
-p <- ggplot(prop_damage[prop_damage$amount>0,], aes(reorder(event,amount,max),amount))
-p + stat_summary(fun.y='mean',geom='bar',aes(fill=measure),position="dodge") + coord_flip() + scale_y_log10(labels=scales::dollar) + labs(title="Property Damage by Type of Event",y="Dollar Amount",x="Event Type")
+```{r graphing property damage, eval=TRUE, fig.height=12, fig.width=10}
+propdam <- ggplot(prop_damage[prop_damage$amount>0,], aes(reorder(event,amount,max),amount))
+propdam + stat_summary(fun.y='mean',geom='bar',aes(fill=measure),position="dodge") + coord_flip() + scale_y_log10(labels=scales::dollar) + labs(title="Property Damage by Type of Event", y="Dollar Amount", x="Event Type")
 ```
 Given the great disparity in amount of property damage from one type to the next, here we opt to display this on a log10 scale, as measured in dollar lost.  The ordering of the events runs according to total damages incurred by the event/weather type, from most to least.  As you can see, wherever the total, maximum-per-storm, and mean-per-storm values are the same, we are observing a single event, as is the case here with *tsunami*.  Looking at *flood*ing as the worst offender, since the majorty of the total damages incurred is consumed by the maximum flood damages incurred, this tells us that while there are quite a few floods, the tolls can be accredited to just one or two particularly bad ones that may have occurred in particularly expensive locations.
 
 From this analysis, it appears that the most damaging event type the United States seems over time is *flooding* at `r scales::dollar(max(prop_damage[prop_damage$measure=="total",]$amount))` in combined damages, followed up by *hurricanes* and then *tornados* and *hail*.  In terms of the mean impact of any one typical event, the worst among them is the *hurricane* at an average in `r scales::dollar(max(prop_damage[prop_damage$measure=="mean",]$amount))` in damages, followed up by *tsunamis* and *floods*.
 
 ## Crop Damage
-```{r graphing crop damage}
-p <- ggplot(crop_damage[crop_damage$amount>0,], aes(reorder(event,amount,max),amount))
-p + stat_summary(fun.y='mean',geom='bar',aes(fill=measure),position="dodge") + coord_flip() + scale_y_log10(labels=scales::dollar) + labs(title="Crop Damage by Type of Event",y="Dollar Amount",x="Event Type")
+```{r graphing crop damage, eval=TRUE, fig.height=12, fig.width=10}
+cropdam <- ggplot(crop_damage[crop_damage$amount>0,], aes(reorder(event,amount,max),amount))
+cropdam + stat_summary(fun.y='mean',geom='bar',aes(fill=measure),position="dodge") + coord_flip() + scale_y_log10(labels=scales::dollar) + labs(title="Crop Damage by Type of Event", y="Dollar Amount", x="Event Type")
 ```
 We see here a very fairly different spread of damage incurred to crops by the same slew of event or weather types.  Again, the ordering is based on total damages incurred over the entire timeline of the data provided, with the worst offender at the top, being *drought* in this case, at a grand total of `r scales::dollar(max(crop_damage[crop_damage$measure=="total",]$amount))` in damages done.  Following that, *floods*, *hurricanes*, and *icy conditions* or *freezing temperatures* clock in as the most persisent and costly incidents.
 
 In terms of damage by anyone TYPE of event, *icy conditions* rank the worst at an average `r scales::dollar(max(crop_damage[crop_damage$measure=="mean",]$amount))` per incident, followed up by what appears to be a singularly bad incident of *prolonged damp weather* and *hurricanes*.
 
 ## Casualties
+```{r graphing human deathtolls, eval=TRUE, fig.height=12, fig.width=10, message=F, warning=F}
+deaths <- ggplot(human_damage, aes(reorder(event,amount,max),amount))
+deaths + stat_summary(fun.y='mean',geom='bar',aes(fill=measure),position="dodge") + coord_flip() + scale_y_log10() + labs(title="Death Toll by Type of Event", y="Human Lives", x="Event Type")
+```
+Note, in this figure, it is not an error that some values for *mean_fatalities* per incident type run to the left, as these are logrithmic values between 0 and 1.  For that reason, while total fatalities attributable to *lightning*, for example, the actual incidence of fatalities per reported incident is actually very low.  The same can be said for *thunderstorms* in general, and *hail*.
 
+And lastly, and setting aside injuries for the moment, we look at the death tolls.  Again, these are ordered, top down, by the total sum of all deaths attributable to the type of event, which places *tornadoes* as the single worst with `r human_damage[human_damage$event=="tornado" & human_damage$measure=="total_fatalities",]$amount` deaths recorded during the period of data in this study.  This is followed up by *extreme heat* at `r human_damage[human_damage$event=="extreme heat" & human_damage$measure=="total_fatalities",]$amount` and *flooding* at `r human_damage[human_damage$event=="flood" & human_damage$measure=="total_fatalities",]$amount` dead.
 
+It terms of most deadly kind of any singular event, we're probably really looking at *tsunami* with `r human_damage[human_damage$event=="tsunami" & human_damage$measure=="mean_fatalities",]$amount` persons deceased in a single event.  Technically, *unusually dry weather* has a higher count, but it also carries the singular (insofar as all three are the same measure) of having too few incidents to judge accurately (i.e., 1).
+
+Lastly, the single worst single incident was one of *extreme heat* which doomed `r human_damage[human_damage$event=="extreme heat" & human_damage$measure=="max_fatalities",]$amount` individuals in a single recorded event.
+
+## In Retrospect
+Having been through the arduous attempt to dissect the hand-entered EVTYPEs into realistic categorizations, I do feel like this analysis could be run again, perhaps engaging with dendograms, to better detect patterns, based at looking FIRST at casualities and damages, rather than at EVTYPEs.
