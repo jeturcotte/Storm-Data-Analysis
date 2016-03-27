@@ -272,4 +272,15 @@ storms %>% group_by(PROPDMGEXP) %>% summarize(population=length(REFNUM))
 storms %>% group_by(CROPDMGEXP) %>% summarize(population=length(REFNUM))
 ```
 
-... we have a few more levels with values than merely *K*, *M*, and *B*, BUT these (including the unnamed factor) represent the overwhelming majority of records, so we'll discount the rest, given that this examine is to determine the most costly and the most deadly of weather incident types.
+... we have a few more levels with values than merely *K*, *M*, and *B*, BUT these (including the unnamed factor) represent the overwhelming majority of records, so we'll discount the rest, given that this examine is to determine the most costly and the most deadly of weather incident types.  Let's define a means of correcting the costly damage types, and run it against *PROPDMG* and *CROPDMG*.  We'll then toss the old columns.
+
+```{r}
+cd <- function(d,e) { 
+     e <- tolower(e); 
+     if(e==""){d} 
+     else if(e=="k"){d*1000} 
+     else if(e=="m"){d*1000000} 
+     else if(e=="b"){d*1000000000} 
+     else {NA}
+}
+```
